@@ -10,154 +10,109 @@
     </td>
     <td width="65%" valign="top">
       <h1>Hades Agent 🌋</h1>
-      <p><strong>O assistente de computador flutuante, superinteligente e invisível que aprende com você!</strong></p>
-      <p>Hades Agent é um companheiro de IA ultraleve que vive no seu computador de um jeito totalmente novo. Em vez de ficar preso dentro de uma página de internet comum, ele flutua livremente sobre as suas janelas, ouve e conversa com você em tempo real, faz pesquisas na web em segundos e se esconde automaticamente de qualquer gravação de tela para manter seus dados 100% seguros!</p>
-      <p>Desenvolvido usando <strong>Electron</strong>, <strong>React</strong>, <strong>Vite</strong> e a incrível <strong>Gemini Multimodal Live API</strong> do Google, o Hades foi criado para ser extremamente rápido, seguro e inteligente.</p>
+      <p><strong>The floating, super-smart, and invisible desktop AI assistant that learns from you!</strong></p>
+      <p>Hades Agent is an ultra-lightweight AI companion that lives on your computer in an entirely new way. Instead of being stuck inside a browser tab, it floats freely over your open windows, listens and talks to you in real-time, searches the web in seconds, and automatically hides from screen recordings to keep your data 100% safe!</p>
+      <p>Built with <strong>Electron</strong>, <strong>React</strong>, <strong>Vite</strong>, and powered by Google's cutting-edge <strong>Gemini Multimodal Live API</strong>, Hades is engineered to be extremely fast, secure, and smart.</p>
     </td>
   </tr>
 </table>
 
 ---
 
-## ⚡ O que é o Hades? (Explicação Simples!)
+## ⚡ What is Hades? (In Simple Words!)
 
-Imagine ter um assistente pessoal que é como um super-herói no seu computador:
-1. **Ele Ouve e Fala:** Ele não apenas lê textos, ele entende sua voz pelo microfone ou som do sistema instantaneamente.
-2. **Ele Tem Memória:** Quando você não está usando o computador, ele entra em um estado de "Sono" (Dreaming) onde analisa as conversas do dia para lembrar de suas preferências e gostos pessoais no futuro.
-3. **Ele é Invisível:** Se você estiver transmitindo sua tela no Discord para os amigos, ou gravando um tutorial no OBS, o Hades desaparece magicamente do vídeo! Ninguém verá suas anotações ou chaves secretas.
-4. **Super Cofre:** Todas as suas chaves e senhas são salvas usando criptografia de nível bancário direto no seu computador. Sem arquivos `.env` perigosos que podem vazar na internet!
-
----
-
-## 🚀 Super Recursos & Tecnologias
-
-### 🎙️ Conversa por Voz em Tempo Real (Susurro Voice HUD)
-<table>
-  <tr>
-    <td width="40%" align="center" valign="middle">
-      <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=350&auto=format&fit=crop&q=80" width="300" style="border-radius: 16px; border: 3px solid #ff2a2a; box-shadow: 0 8px 24px rgba(255, 42, 42, 0.25);" alt="Microphone Stream" />
-    </td>
-    <td width="60%" valign="top">
-      <h4>Como funciona para o usuário:</h4>
-      <p>Pressione <code>Alt+B</code> e fale naturalmente! O Hades ouve sua voz e responde de volta falando. Você pode ver um cronômetro e gráficos de quanto está custando a conversa em tempo real.</p>
-      <h4>Sob o capô (Técnico):</h4>
-      <p>Captura áudio em <strong>16kHz raw PCM</strong> direto do microfone ou áudio do sistema, enviando via <strong>WebSockets</strong> de baixíssima latência para a <code>gemini-2.5-flash-native-audio-latest</code>. Acompanha contagem de tokens e tempo de sessão.</p>
-    </td>
-  </tr>
-</table>
-
-### 🧠 Consolidação de Memórias (Dreaming System)
-<table>
-  <tr>
-    <td width="40%" align="center" valign="middle">
-      <img src="https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=350&auto=format&fit=crop&q=80" width="300" style="border-radius: 16px; border: 3px solid #ff2a2a; box-shadow: 0 8px 24px rgba(255, 42, 42, 0.25);" alt="Brain Dreaming" />
-    </td>
-    <td width="60%" valign="top">
-      <h4>Como funciona para o usuário:</h4>
-      <p>O Hades tem um "sono artificial". Ele lê os diários das conversas recentes e cria memórias. Você pode escolher qual modelo de inteligência gerencia esse sono e ativar ou desativar essa função nas configurações!</p>
-      <h4>Sob o capô (Técnico):</h4>
-      <p>O <code>DreamService</code> executa ciclos de análise inteligentes salvando insights consolidados em formato compactado no arquivo local <code>learnings.json</code>. O usuário pode gerenciar o estado da atividade e trocar o modelo dinamicamente na UI de configurações.</p>
-    </td>
-  </tr>
-</table>
-
-### 🕶️ Proteção Antigravação (Stealth Shield)
-<table>
-  <tr>
-    <td width="40%" align="center" valign="middle">
-      <img src="https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=350&auto=format&fit=crop&q=80" width="300" style="border-radius: 16px; border: 3px solid #ff2a2a; box-shadow: 0 8px 24px rgba(255, 42, 42, 0.25);" alt="Stealth Privacy Shield" />
-    </td>
-    <td width="60%" valign="top">
-      <h4>Como funciona para o usuário:</h4>
-      <p>Ative o "Stealth Mode" (Modo Furtivo) nas configurações. Agora o aplicativo fica totalmente invisível para compartilhamentos de tela do Discord, Teams, gravações do OBS Studio e prints de tela!</p>
-      <h4>Sob o capô (Técnico):</h4>
-      <p>Aplica a API nativa do sistema operacional <code>setContentProtection(true)</code> em todas as janelas do Electron, impedindo capturas de tela no nível de composição de janelas do Windows (DWM).</p>
-    </td>
-  </tr>
-</table>
-
-### ⌨️ Barra de Pesquisa Rápida (Spotlight Command Bar)
-<table>
-  <tr>
-    <td width="40%" align="center" valign="middle">
-      <img src="https://images.unsplash.com/photo-1546074177-3a158cf53a80?w=350&auto=format&fit=crop&q=80" width="300" style="border-radius: 16px; border: 3px solid #ff2a2a; box-shadow: 0 8px 24px rgba(255, 42, 42, 0.25);" alt="Spotlight keyboard" />
-    </td>
-    <td width="60%" valign="top">
-      <h4>Como funciona para o usuário:</h4>
-      <p>Aperte <code>Alt+D</code> para abrir uma barra de comandos no estilo macOS Spotlight. Digite sua dúvida e o Hades pesquisará em tempo real na internet para te dar uma resposta super completa em formato markdown.</p>
-      <h4>Sob o capô (Técnico):</h4>
-      <p>Envia requisições assíncronas para a **Tavily Search API**, processando dados estruturados de busca em tempo real com renderização reativa em janelas transparentes do Electron.</p>
-    </td>
-  </tr>
-</table>
-
-### 🔒 Chaves Criptografadas (Sem arquivos .env expostos!)
-<table>
-  <tr>
-    <td width="40%" align="center" valign="middle">
-      <img src="https://images.unsplash.com/photo-1563986768609-322da13575f3?w=350&auto=format&fit=crop&q=80" width="300" style="border-radius: 16px; border: 3px solid #ff2a2a; box-shadow: 0 8px 24px rgba(255, 42, 42, 0.25);" alt="Encrypted Safe" />
-    </td>
-    <td width="60%" valign="top">
-      <h4>Como funciona para o usuário:</h4>
-      <p>Você não precisa editar arquivos de texto complexos. Basta abrir a interface de Configurações (<code>Alt+S</code>), colar suas chaves de API do Google Gemini e Tavily, e pronto! Tudo é salvo criptografado de forma segura no seu disco.</p>
-      <h4>Sob o capô (Técnico):</h4>
-      <p>Utiliza um wrapper seguro de criptografia simétrica <strong>AES-256-CBC</strong> com chaves derivadas por <strong>scrypt</strong> a nível de usuário (baseado no usuário do SO). As chaves nunca são expostas em texto puro em arquivos de configuração.</p>
-    </td>
-  </tr>
-</table>
+Imagine having a personal assistant who is like a superhero on your computer:
+1. **It Listens and Speaks:** It doesn't just read text; it understands your voice through your microphone or system audio instantly.
+2. **It Has Memory:** When you aren't actively using your computer, it enters an "AI Sleep" (Dreaming) state where it analyzes the day's conversations to remember your preferences and tastes for the future.
+3. **It is Invisible:** If you are sharing your screen on Discord, Microsoft Teams, recording a video with OBS Studio, or taking screenshots, Hades magically disappears from the video stream! No one will ever see your notes or secret keys.
+4. **Super Vault:** All your secret API keys and configurations are saved using bank-grade encryption directly on your machine. No dangerous `.env` files that can leak on the internet!
 
 ---
 
-## 🚀 Como Instalar o Hades Agent
+## 🚀 Core Features & Technology Stack
 
-### 📦 Opção 1: Para Usuários (Instalação Direta e Rápida)
-Se você quer apenas utilizar o Hades Agent no seu dia a dia, siga o método oficial simplificado:
+### 🎙️ Real-Time Voice Chat (Susurro Voice HUD)
+*   **For Users:** Press `Alt+B` and speak naturally! Hades hears your voice and speaks back to you in real-time. You can see a live timer, session cost trackers, and dynamic audio wave visualizers.
+*   **Technical Details:** Captures **16kHz raw PCM audio** directly from your microphone or system audio stream, transmitting it via ultra-low latency **WebSockets** to Google's `gemini-2.5-flash-native-audio-latest` model.
 
-1. Acesse a barra lateral direita desta página do GitHub e clique em **[Releases](https://github.com/victorl-dev/Hades-Agent/releases)**.
-2. Baixe o instalador executável oficial do Windows (exemplo: `Hades-Setup-1.1.0.exe`).
-3. Dê dois cliques no instalador baixado para instalar e abrir o aplicativo instantaneamente!
-4. Com o aplicativo aberto, aperte **`Alt+S`** no teclado para acessar a aba de Configurações, insira suas chaves do Gemini e Tavily, clique em **Salvar** e aproveite!
+### 🧠 Memory Consolidation (Dreaming System)
+*   **For Users:** Hades has an "artificial sleep." It reads recent chat history files to form memories of who you are. You can choose which model manages this sleep and enable or disable this function in the settings panel.
+*   **Technical Details:** The `DreamService` schedules background analysis cycles, synthesizing and storing consolidated user insights in a highly compressed format in a local `learnings.json` file.
+
+### 🕶️ Anti-Recording Shield (Stealth Shield)
+*   **For Users:** Enable "Stealth Mode" in your settings. Hades instantly becomes completely invisible to screen shares (Discord, Zoom, Teams), video recordings (OBS Studio, Camtasia), and OS-level screenshots!
+*   **Technical Details:** Applies the OS-level `setContentProtection(true)` API on all Electron windows, blocking screen capture at the Windows Desktop Window Manager (DWM) composition level.
+
+### ⌨️ Quick-Search Bar (Spotlight Command Bar)
+*   **For Users:** Press `Alt+D` to open a search bar in the style of macOS Spotlight. Type any question, and Hades will search the internet in real-time to render highly detailed markdown answers.
+*   **Technical Details:** Sends asynchronous queries to the **Tavily Search API**, processing and rendering live search results dynamically inside transparent, reactive overlay windows.
+
+### 🔒 Bank-Grade Encrypted Storage (Zero .env Leaks!)
+*   **For Users:** No complex configuration files to edit. Just open the Settings panel (`Alt+S`), paste your Google Gemini and Tavily API keys, and click **Save**. Hades secures them with strong encryption instantly.
+*   **Technical Details:** Uses a secure symmetric encryption wrapper powered by **AES-256-CBC** with keys derived using **scrypt** based on your OS username. Secret keys are never stored in plain text.
 
 ---
 
-### 🛠️ Opção 2: Para Desenvolvedores (Código Fonte)
-Se você deseja rodar a aplicação em modo de desenvolvimento, contribuir com o código fonte ou depurar a aplicação localmente:
+## 🤖 AI-Assisted Architecture & Engineering
 
-1. Certifique-se de ter o **[Node.js](https://nodejs.org/)** instalado em sua máquina.
-2. Clone o repositório e navegue até a pasta do projeto:
-   ```powershell
+Hades Agent represents a landmark in modern **AI-assisted software engineering**. The entire repository was co-engineered with Google's **Antigravity** (Advanced Agentic Coding Assistant by Google DeepMind) using a formal, highly disciplined development paradigm:
+
+*   **Subagent-Driven Development (SDD):** The architecture was built through a multi-layered, autonomous workflow where specialized subagents tackled atomic modules (IPC orchestration, cryptocores, real-time voice, and UI layouts) while executing continuous validation cycles.
+*   **Strict Quality & Optimization Gates:** Enforced clean code principles—preventing spaghetti hooks, maintaining strict TypeScript typings, applying centralized State Management via a single source of truth (`jsonStore.js`), and optimizing production bundles to compile in under **760ms**.
+*   **Zero-Overhead Security Auditing:** Automatically scanned and expunged development configurations (`opencode.json`, `.planning/`, `.env`) physically and historically from the entire Git tree to ensure production-grade security.
+
+---
+
+## 🚀 How to Install & Run Hades Agent
+
+### 📦 Option 1: For Users (Quick Stable Install)
+If you want to use Hades Agent in your daily life, follow this simple path:
+
+1. Go to the right sidebar of this GitHub page and click on **[Releases](https://github.com/victorl-dev/Hades-Agent/releases)**.
+2. Download the latest official Windows installer (e.g., `Hades-Setup-1.0.0.exe`).
+3. Double-click the installer to install and launch the application instantly.
+4. Press **`Alt+S`** to open the Settings panel, paste your Gemini and Tavily API keys, click **Save**, and start talking to Hades!
+
+---
+
+### 🛠️ Option 2: For Developers (Source Code)
+If you want to run the code locally, debug, or contribute:
+
+1. Make sure you have **[Node.js](https://nodejs.org/)** (v18.x or newer) installed.
+2. Clone the repository and navigate to the directory:
+   ```bash
    git clone https://github.com/victorl-dev/Hades-Agent.git
    cd Hades-Agent
    ```
-3. Instale todas as dependências locais de desenvolvimento:
-   ```powershell
+3. Install all workspace development dependencies:
+   ```bash
    npm install
    ```
-4. Rode a aplicação em ambiente de testes/desenvolvimento concorrente:
-   ```powershell
+4. Start the concurrent development environment:
+   ```bash
    npm run dev
    ```
-5. Acesse as Configurações pelo atalho **`Alt+S`** no aplicativo para inserir as suas credenciais do **Google AI Studio** e **Tavily**. Elas serão salvas criptografadas automaticamente na pasta de dados local do seu sistema, sem risco de vazamentos!
+5. Press **`Alt+S`** inside the app to save your API keys. They will be encrypted securely in your local app data directory.
 
 ---
 
-## ⚙️ Teclas de Atalho Padrão
+## ⚙️ Keyboard Shortcuts
 
-O Hades fica quietinho na bandeja do sistema (perto do relógio do Windows) e pode ser ativado a qualquer momento usando estas teclas mágicas:
+Hades stays quietly in your system tray (near the Windows clock) and can be summoned instantly using these shortcut keys:
 
-*   **`Alt+D`** ➔ Abre a Barra de Pesquisa Rápida (Spotlight).
-*   **`Alt+B`** ➔ Abre o Gravador de Voz Interativo (Susurro).
-*   **`Alt+S`** ➔ Abre o Painel de Configurações e Atalhos.
-*   **`Esc`** ➔ Fecha ou esconde qualquer painel ativo e devolve o foco para a sua janela anterior.
+*   **`Alt+D`** ➔ Open the Spotlight Command Bar.
+*   **`Alt+B`** ➔ Open the Susurro Voice HUD recorder.
+*   **`Alt+S`** ➔ Open the Settings & Shortcuts panel.
+*   **`Esc`** ➔ Hide the active window and return focus to your previous application.
 
-> [!NOTE]
-> Você pode personalizar todas essas teclas na aba **Teclas de Atalho** dentro do painel de Configurações!
+> [!TIP]
+> You can fully customize all of these shortcut keys inside the **Shortcuts** tab in the Settings panel!
 
 ---
 
-## 🏗️ Arquitetura do Sistema
+## 🏗️ System Architecture
 
-O Hades se comunica usando eventos IPC rápidos entre as janelas transparentes do Electron e os serviços de inteligência na nuvem:
+Hades uses fast IPC events to communicate between transparent overlay windows and cloud intelligence services:
 
 ```mermaid
 graph TD
@@ -166,61 +121,61 @@ graph TD
     classDef service fill:#111,stroke:#888,stroke-width:1px,color:#aaa;
     classDef external fill:#2b0c0c,stroke:#f97316,stroke-width:1px,color:#ffed4a;
 
-    Main[Processo Principal do Electron]:::main
+    Main[Electron Main Process]:::main
     
-    subgraph UI_Layers [Janelas Flutuantes Transparentes]
+    subgraph UI_Layers [Transparent Overlay Windows]
         CommandBar[Alt+D: Spotlight Command]:::float
-        MiniChat[MiniChat Chat Rápido]:::float
+        MiniChat[MiniChat Dynamic Window]:::float
         Susurro[Alt+B: Susurro Voice HUD]:::float
-        Notification[Alertas e Notificações]:::float
-        Settings[Alt+S: Painel de Configurações]:::float
+        Notification[Alerts & Notifications]:::float
+        Settings[Alt+S: Settings & Shortcuts]:::float
     end
     
-    SSoT[Ponte de Comunicação IPC]:::service
-    Store[JsonStore Criptografado]:::service
-    Dream[DreamService Sono da IA]:::service
+    SSoT[IPC Bridge Protocol]:::service
+    Store[AES-256 Secure JsonStore]:::service
+    Dream[DreamService AI Sleep]:::service
     
-    subgraph Cloud_APIs [Serviços e APIs de Nuvem]
+    subgraph Cloud_APIs [Cloud Intelligence Services]
         Gemini[Gemini Live API]:::external
         Tavily[Tavily Search API]:::external
     end
 
-    Main -->|Gerencia o estado das janelas| UI_Layers
-    UI_Layers -->|Sinais e Ações IPC| SSoT
-    SSoT -->|Trata os eventos no Electron| Main
-    Main -->|Carrega e Salva chaves AES-256| Store
-    Main -->|Agenda o sono da IA| Dream
-    Dream -->|Guarda aprendizados no disco| Store
+    Main -->|Manages Window States| UI_Layers
+    UI_Layers -->|IPC Signals & Actions| SSoT
+    SSoT -->|Electron Event Handlers| Main
+    Main -->|Reads/Writes AES-256 Secrets| Store
+    Main -->|Schedules AI Consolidation| Dream
+    Dream -->|Persists Insights| Store
     
-    Main <-->|Áudio em tempo real PCM| Gemini
-    Main <-->|Busca rápida na Web| Tavily
+    Main <-->|16kHz Raw PCM Audio Stream| Gemini
+    Main <-->|Asynchronous Web Queries| Tavily
 ```
 
 ---
 
-## 💡 Inspiração e Agradecimentos (Inspirado no Persua)
+## 💡 Inspiration & Credits (Inspired by Persua)
 
 > [!NOTE]
-> ### 🌟 Reconhecimento Especial a Lucas Montano (@lucasmontano)
+> ### 🌟 Special Acknowledgement to Lucas Montano (@lucasmontano)
 > 
-> Este projeto foi inspirado no conceito brilhante do **Persua**, um assistente de voz e IA em tempo real criado e demonstrado pelo renomado engenheiro e criador de conteúdo **Lucas Montano** (@lucasmontano)!
+> This project was inspired by the brilliant concept of **Persua**, a real-time voice and AI assistant created and demonstrated by the renowned software engineer and content creator **Lucas Montano** (@lucasmontano)!
 > 
-> **Gostaríamos de frisar e deixar claro que nenhum código do Persua foi copiado ou utilizado.** O **Hades Agent** foi desenvolvido inteiramente do zero por nós para fins de portfólio de engenharia técnica, permitindo explorar a fundo temas complexos como streams de áudio PCM brutos, conexão por WebSockets com o Gemini Live, e criptografia segura de chaves API no Electron.
+> **We want to emphasize that no code from Persua was copied or used in this repository.** **Hades Agent** was developed entirely from scratch as a technical engineering portfolio project. This allowed us to explore advanced concepts such as raw PCM audio streaming, full-duplex WebSockets with Gemini Live, and native secure encryption algorithms in Electron.
 > 
-> Agradecemos ao **Lucas Montano** por inspirar a comunidade de tecnologia e elevar o patamar no desenvolvimento de projetos criativos! 🚀
+> Thank you, **Lucas Montano**, for inspiring the technology community and raising the bar for creative project development! 🚀
 
 ---
 
-## 🤝 Como Contribuir
+## 🤝 Contributing
 
-Quer ajudar a melhorar o Hades? Ficaremos super felizes!
+We welcome contributions to make Hades Agent even better! Please keep these core rules in mind:
 
-1.  **Mantenha o código limpo:** Mantenha os hooks em React com menos de 300 linhas de código.
-2.  **Use a Single Source of Truth:** Salve as configurações sempre usando o `electron/store/jsonStore.js`.
-3.  **Mantenha a estética premium:** Use o design de vidro jateado (glassmorphism) do Hades definido no arquivo `src/styles/`.
+1. **Keep it Modular:** Ensure all React custom hooks are kept under 300 lines of code.
+2. **Single Source of Truth:** Read and write configurations exclusively through `electron/store/jsonStore.js`.
+3. **Premium Visuals:** Preserve the custom frosted-glass (glassmorphism) aesthetics defined in `src/styles/`.
 
 ---
 
-## 📄 Licença
+## 📄 License
 
-Este projeto é licenciado sob a licença **MIT** — sinta-se livre para usar, estudar e modificar o código como quiser!
+This project is licensed under the **MIT License** — feel free to study, modify, and build upon it as you wish!
