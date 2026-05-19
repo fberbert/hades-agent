@@ -12,6 +12,7 @@ export const useChatState = () => {
   });
   const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
   const [isBusy, setIsBusy] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const messagesRef = useRef<ChatMessage[]>(messages);
   const pendingMessagesRef = useRef<ChatMessage[]>(pendingMessages);
@@ -24,6 +25,8 @@ export const useChatState = () => {
   useEffect(() => {
     messagesRef.current = messages;
     
+    if (!isLoaded) return; // Prevent saving before loading completes
+
     // Single Source of Truth for persistence: The messages state
     const historyJson = JSON.stringify(messages);
     localStorage.setItem('chat_history', historyJson);
@@ -31,7 +34,7 @@ export const useChatState = () => {
     // Update Electron side
     electronService.saveChat(messages);
     electronService.updateChatStatus(messages.length > 0);
-  }, [messages]);
+  }, [messages, isLoaded]);
 
   // Initial load from Electron storage (fallback to localStorage if empty)
   useEffect(() => {
@@ -48,6 +51,9 @@ export const useChatState = () => {
         }
       } catch (err) {
         console.error('[useChatState] Failed to load chat history:', err);
+      } finally {
+        setIsLoaded(true);
+        electronService.chatWindowReady();
       }
     };
     loadFromFile();
@@ -76,13 +82,21 @@ export const useChatState = () => {
   }, []);
 
   /**
-   * Clears the chat history across all storage layers.
+   * Archives the current session via Electron (generates a title and saves to sessions.json),
+   * then clears all local state. This is the canonical way to start a new session.
+   * Local state is always cleared even if archiving fails (e.g. API quota errors).
    */
-  const clearHistory = useCallback(() => {
-    setMessages([]);
-    messagesRef.current = [];
-    localStorage.removeItem('chat_history');
-    electronService.endSession();
+  const clearHistory = useCallback(async () => {
+    try {
+      await electronService.endSession('minichat');
+    } catch {
+      // Archiving failed (e.g. API quota), but we still start fresh
+    } finally {
+      setMessages([]);
+      messagesRef.current = [];
+      localStorage.removeItem('chat_history');
+      localStorage.removeItem('minichat_timer');
+    }
   }, []);
 
   return {

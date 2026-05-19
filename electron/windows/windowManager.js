@@ -120,26 +120,42 @@ class WindowManager {
       const store = require('../store/jsonStore');
       const settings = store.getSettings();
       const isStealth = !!(settings && settings.general && settings.general.stealthMode);
-      win.setContentProtection(isStealth);
+      console.log(`[WINDOW_MANAGER] Initializing stealth mode for ${name}. isStealth: ${isStealth}, alwaysOnTop: ${win.isAlwaysOnTop()}`);
+      
+      const success = win.setContentProtection(isStealth);
+      console.log(`[WINDOW_MANAGER] Initial stealth mode applied for ${name}: ${success}`);
     } catch (e) {
       console.error(`[WINDOW_MANAGER] Failed to apply initial stealth mode for ${name}:`, e);
     }
 
-    // Ensure content protection is enforced whenever the window is shown (prevents OS resets)
-    win.on('show', () => {
-      setTimeout(() => {
-        if (win.isDestroyed()) return;
-        try {
-          const store = require('../store/jsonStore');
-          const settings = store.getSettings();
-          const isStealth = !!(settings && settings.general && settings.general.stealthMode);
-          win.setContentProtection(isStealth);
-          console.log(`[WINDOW_MANAGER] Enforced stealth mode (${isStealth}) on show for: ${name}`);
-        } catch (e) {
-          console.error(`[WINDOW_MANAGER] Failed to enforce stealth mode on show for ${name}:`, e);
-        }
-      }, 100);
-    });
+    // Ensure content protection is enforced whenever the window is shown, restored, or focused (prevents OS resets)
+    const enforceStealth = (eventSource) => {
+      const runEnforce = (delay) => {
+        setTimeout(() => {
+          if (win.isDestroyed()) return;
+          try {
+            const store = require('../store/jsonStore');
+            const settings = store.getSettings();
+            const isStealth = !!(settings && settings.general && settings.general.stealthMode);
+            
+            const success = win.setContentProtection(isStealth);
+            console.log(`[WINDOW_MANAGER] [Enforce:${eventSource}:${delay}ms] for ${name} (alwaysOnTop: ${win.isAlwaysOnTop()}, visible: ${win.isVisible()}) -> setContentProtection: ${success}`);
+          } catch (e) {
+            console.error(`[WINDOW_MANAGER] [Enforce:${eventSource}:${delay}ms] Failed for ${name}:`, e);
+          }
+        }, delay);
+      };
+
+      // Run multiple times to ensure OS style changes/composition settle
+      runEnforce(50);
+      runEnforce(200);
+      runEnforce(500);
+      runEnforce(1500);
+    };
+
+    win.on('show', () => enforceStealth('show'));
+    win.on('restore', () => enforceStealth('restore'));
+    win.on('focus', () => enforceStealth('focus'));
 
     return win;
   }

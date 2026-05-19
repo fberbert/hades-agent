@@ -62,6 +62,12 @@ export const useSusurro = () => {
     };
     loadTokens();
 
+    electronService.getSettings().then(settings => {
+      if (settings?.audio?.micVolume !== undefined) {
+        setInputVolume(settings.audio.micVolume / 100);
+      }
+    });
+
     const timerInterval = setInterval(() => setTimer(prev => prev + 1), 1000);
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -79,6 +85,18 @@ export const useSusurro = () => {
     return () => {
       globalThis.removeEventListener('keydown', handleKeyDown);
       clearInterval(timerInterval);
+    };
+  }, []);
+
+  // Listen for live settings updates from the main process
+  useEffect(() => {
+    const unsubscribe = electronService.onSettingsUpdated((settings) => {
+      if (settings?.audio?.micVolume !== undefined) {
+        setInputVolume(settings.audio.micVolume / 100);
+      }
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
     };
   }, []);
 
@@ -120,6 +138,17 @@ export const useSusurro = () => {
     }
   }, [newPersonaName, newPersonaPrompt, savePersona]);
 
+  const handleCloseSession = useCallback(async () => {
+    try {
+      await electronService.endSession('susurro');
+    } catch {
+      // Archiving failed, still clear local state
+    } finally {
+      setMessages([]);
+      setTimer(0);
+    }
+  }, []);
+
   return {
     // State
     messages,
@@ -157,6 +186,7 @@ export const useSusurro = () => {
     // Font Size
     fontSize,
     increaseFontSize: () => setFontSize(prev => Math.min(prev + 1, 24)),
-    decreaseFontSize: () => setFontSize(prev => Math.max(prev - 1, 10))
+    decreaseFontSize: () => setFontSize(prev => Math.max(prev - 1, 10)),
+    onCloseSession: handleCloseSession
   };
 };

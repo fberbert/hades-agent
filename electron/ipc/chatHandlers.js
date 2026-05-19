@@ -16,6 +16,68 @@ function registerChatHandlers() {
     store.saveChatHistory(history);
   });
 
+  ipcMain.handle('end-session', async (event, type) => {
+    try {
+      const isSusurro = type === 'susurro';
+      const history = isSusurro ? store.getSusurroHistory() : store.getChatHistory();
+      
+      if (!history || history.length === 0) {
+        return { success: true, data: { message: 'No active session' } };
+      }
+
+      let firstMessageContent = 'Nova Sessão';
+      const firstMessage = history[0];
+      if (firstMessage) {
+        if (firstMessage.parts) {
+          const textPart = firstMessage.parts.find(p => p.text);
+          if (textPart) firstMessageContent = textPart.text;
+        } else if (firstMessage.text) {
+          firstMessageContent = firstMessage.text;
+        } else if (firstMessage.content) {
+          firstMessageContent = firstMessage.content;
+        }
+      }
+
+      const aiService = require('../services/aiService');
+      const title = await aiService.generateSessionTitle(firstMessageContent);
+
+      const session = {
+        id: Date.now().toString(),
+        title,
+        type: type || 'minichat',
+        timestamp: new Date().toISOString(),
+        messages: history
+      };
+
+      const sessions = store.getSessions();
+      sessions.push(session);
+      store.saveSessions(sessions);
+
+      if (isSusurro) {
+        store.saveSusurroHistory([]);
+      } else {
+        store.saveChatHistory([]);
+        const windowManager = require('../windows/windowManager');
+        const chatWin = windowManager.get('chat');
+        if (chatWin && !chatWin.isDestroyed()) {
+          chatWin.hide();
+        }
+      }
+
+      const windowManager = require('../windows/windowManager');
+      const cmdWin = windowManager.get('command');
+      if (cmdWin && !cmdWin.isDestroyed()) {
+        cmdWin.webContents.send('focus-input');
+        cmdWin.focus(); // Ensure it receives OS-level focus if possible
+      }
+
+      return { success: true, data: session };
+    } catch (error) {
+      logger.error('IPC', 'end-session error', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   // --- Token Management ---
   ipcMain.handle('update-tokens', (event, count) => {
     try {

@@ -20,7 +20,6 @@ const windowConfigs = {
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    skipTaskbar: true,
     show: false,
     resizable: true,
     movable: true,
@@ -68,7 +67,6 @@ const windowConfigs = {
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    skipTaskbar: true,
     show: false,
     resizable: false,
     backgroundColor: '#00000000',
@@ -87,8 +85,6 @@ const windowConfigs = {
     height: 520,
     frame: false,
     transparent: true,
-    hasShadow: false,
-    thickFrame: false,
     alwaysOnTop: true,
     show: false,
     resizable: false,
@@ -108,8 +104,6 @@ const windowConfigs = {
     height: 680,
     frame: false,
     transparent: true,
-    hasShadow: false,
-    thickFrame: false,
     alwaysOnTop: false,
     show: false,
     resizable: true,
@@ -125,7 +119,6 @@ const windowConfigs = {
     },
     onInit: (win) => {
       if (process.platform === 'win32') win.setBackgroundMaterial('mica');
-      win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     }
   },
   suggestions: {
@@ -134,7 +127,6 @@ const windowConfigs = {
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    skipTaskbar: true,
     show: false,
     resizable: false,
     focusable: false,
@@ -156,7 +148,6 @@ const windowConfigs = {
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    skipTaskbar: true,
     resizable: false,
     show: false,
     focusable: false,
@@ -169,8 +160,6 @@ const windowConfigs = {
     onInit: (win) => {
       const { width: screenWidth } = screen.getPrimaryDisplay().workArea;
       win.setPosition(Math.floor(screenWidth / 2 - 200), 50);
-      win.setAlwaysOnTop(true, 'screen-saver');
-      win.setVisibleOnAllWorkspaces(true);
     }
   },
   splash: {
@@ -179,7 +168,6 @@ const windowConfigs = {
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    skipTaskbar: true,
     resizable: false,
     focusable: false,
     hasShadow: false,
@@ -217,6 +205,7 @@ const windowConfigs = {
       preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
+      backgroundThrottling: false,
     },
     onInit: (win) => {
       if (process.platform === 'win32') win.setBackgroundMaterial('mica');

@@ -27,7 +27,7 @@ export const ChatList: React.FC<ChatListProps> = ({
   return (
     <div className="chat-content">
       {messages.length === 0 && pendingMessages.length === 0 ? (
-        <div className="empty-state">Nenhuma mensagem ativa...</div>
+        <div className="empty-state" />
       ) : (
         <div className="messages-list">
           {messages.map((msg) => (

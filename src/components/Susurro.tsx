@@ -28,7 +28,6 @@ const Susurro: React.FC = () => {
         setIsSettingsOpen={s.setIsSettingsOpen}
         menuView={s.menuView}
         setMenuView={s.setMenuView}
-        targetLanguage={s.targetLanguage}
         setTargetLanguage={s.setTargetLanguage}
         setTargetLanguageLabel={s.setTargetLanguageLabel}
         togglePin={s.togglePin}
@@ -50,6 +49,7 @@ const Susurro: React.FC = () => {
         fontSize={s.fontSize}
         increaseFontSize={s.increaseFontSize}
         decreaseFontSize={s.decreaseFontSize}
+        onCloseSession={s.onCloseSession}
       />
 
       {/* Main Chat Area */}

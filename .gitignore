@@ -22,3 +22,8 @@ yarn-error.log*
 .gemini/
 .zed/
 .mcp.json
+
+# Cache and Scratch folders
+graphify-out/
+scratch/
+

@@ -36,6 +36,46 @@ class AIService {
   }
 
   /**
+   * Generates a short, descriptive session title from the first user message.
+   * @param {string} firstMessage - The first user message in the session.
+   * @returns {Promise<string>}
+   */
+  async generateSessionTitle(firstMessage) {
+    const apiKey = jsonStore.getSettings().general.apiKey || process.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) return this._fallbackTitle(firstMessage);
+
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash',
+        systemInstruction: [
+          'You are a session title generator. Given a user message, produce a concise, descriptive title.',
+          'Rules:',
+          '- Minimum 2 words, maximum 5 words',
+          '- Title Case (capitalize each major word)',
+          '- No punctuation at the end',
+          '- No quotes, no emojis, no markdown',
+          '- Action-oriented when possible (e.g. "Fixing Login Bug", "Setting Up Dark Mode")',
+          '- Return ONLY the title, nothing else'
+        ].join('\n')
+      });
+
+      const result = await model.generateContent(firstMessage.substring(0, 500));
+      const raw = result.response.text().trim();
+      // Safety: strip any quotes, newlines, or extra spaces
+      return raw.replace(/['"]/g, '').replace(/\n.*/g, '').trim() || this._fallbackTitle(firstMessage);
+    } catch (err) {
+      logger.error('AI', 'Error generating session title', err);
+      return this._fallbackTitle(firstMessage);
+    }
+  }
+
+  _fallbackTitle(text) {
+    if (!text) return 'Nova Sessão';
+    return text.substring(0, 40).trim() + (text.length > 40 ? '...' : '');
+  }
+
+  /**
    * Transcribes audio from base64 data.
    * @param {string} base64Audio - Audio data in base64.
    * @returns {Promise<string|null>}

@@ -46,7 +46,8 @@ contextBridge.exposeInMainWorld('electron', {
   updateChatStatus: (hasMessages) => ipcRenderer.send('chat-status-update', { hasMessages }),
   updateTokens: (count) => ipcRenderer.invoke('update-tokens', count),
   getTotalTokens: () => ipcRenderer.invoke('get-total-tokens'),
-  endSession: () => ipcRenderer.send('end-session'),
+  endSession: (type) => ipcRenderer.invoke('end-session', type),
+  chatWindowReady: () => ipcRenderer.send('chat-window-ready'),
 
   // --- Tasks ---
   scheduleTask: (data) => ipcRenderer.invoke('schedule-task', data),
@@ -169,4 +170,9 @@ contextBridge.exposeInMainWorld('electron', {
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   applyStealthMode: (enabled) => ipcRenderer.invoke('apply-stealth-mode', enabled),
   getHistoryData: () => ipcRenderer.invoke('get-history-data'),
+  onSettingsUpdated: (callback) => {
+    const sub = (_event, settings) => callback(settings);
+    ipcRenderer.on('settings-updated', sub);
+    return () => ipcRenderer.removeListener('settings-updated', sub);
+  },
 });

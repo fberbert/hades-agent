@@ -74,13 +74,16 @@ class ElectronService {
   }
   saveChat(history: any[]) { this.electron?.saveChat(history); }
   updateChatStatus(hasMessages: boolean) { this.electron?.updateChatStatus(hasMessages); }
-  endSession() { this.electron?.endSession(); }
+  async endSession(type?: string) { 
+    return await this.handleResponse(this.electron?.endSession(type), null, 'endSession'); 
+  }
   async getTotalTokens() { 
     return await this.handleResponse(this.electron?.getTotalTokens(), 0, 'getTotalTokens'); 
   }
   async updateTokens(count: number) { 
     return await this.handleResponse(this.electron?.updateTokens(count), 0, 'updateTokens'); 
   }
+  chatWindowReady() { this.electron?.chatWindowReady(); }
 
   // --- Susurro ---
   async startSusurroLive(personaPrompt?: string) { 
@@ -137,6 +140,9 @@ class ElectronService {
   async saveSettings(settings: any) { return await this.handleResponse(this.electron?.saveSettings(settings), undefined, 'saveSettings'); }
   async applyStealthMode(enabled: boolean) { return await this.handleResponse(this.electron?.applyStealthMode(enabled), undefined, 'applyStealthMode'); }
   async getHistoryData() { return await this.handleResponse(this.electron?.getHistoryData(), null, 'getHistoryData'); }
+  onSettingsUpdated(callback: (settings: SettingsData) => void) {
+    return this.electron?.onSettingsUpdated(callback) || (() => {});
+  }
 
   async scheduleTask(args: any) { 
     return await this.handleResponse(this.electron?.scheduleTask(args), null, 'scheduleTask'); 

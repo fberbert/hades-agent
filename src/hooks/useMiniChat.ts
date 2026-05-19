@@ -27,7 +27,10 @@ export const useMiniChat = () => {
   const { isPinned, isResizing, togglePin, handleMinimize, startResizing } = useWindowControl();
   const { copiedId, copyToClipboard } = useClipboard();
 
-  const [timer, setTimer] = useState(0);
+  const [timer, setTimer] = useState(() => {
+    const saved = localStorage.getItem('minichat_timer');
+    return saved ? parseInt(saved, 10) : 0;
+  });
   const [tokens, setTokens] = useState(0);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [menuView, setMenuView] = useState<'main' | 'models'>('main');
@@ -35,11 +38,34 @@ export const useMiniChat = () => {
 
   // Timer and Tokens effect
   useEffect(() => {
-    const timerInterval = setInterval(() => setTimer(prev => prev + 1), 1000);
+    const timerInterval = setInterval(() => {
+      setTimer(prev => {
+        const next = prev + 1;
+        localStorage.setItem('minichat_timer', next.toString());
+        return next;
+      });
+    }, 1000);
     
     electronService.getTotalTokens().then(t => setTokens(t));
+    electronService.getSettings().then(settings => {
+      if (settings?.general?.minichatModel) {
+        setCurrentModel(settings.general.minichatModel);
+      }
+    });
 
     return () => clearInterval(timerInterval);
+  }, []);
+
+  // Listen for live settings updates from the main process
+  useEffect(() => {
+    const unsubscribe = electronService.onSettingsUpdated((settings) => {
+      if (settings?.general?.minichatModel) {
+        setCurrentModel(settings.general.minichatModel);
+      }
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   // Auto-scroll to the latest message
@@ -65,11 +91,18 @@ export const useMiniChat = () => {
     }
   };
 
+  // Use refs for values needed inside the IPC listener to avoid recreating it
+  const isBusyRef = useRef(isBusy);
+  useEffect(() => { isBusyRef.current = isBusy; }, [isBusy]);
+
+  const currentModelRef = useRef(currentModel);
+  useEffect(() => { currentModelRef.current = currentModel; }, [currentModel]);
+
   // Handle incoming messages and task executions from Electron IPC
   useEffect(() => {
     // New message from Command Bar
     const unsubscribeMsg = electronService.onNewChatMessage((msg: string, image?: string) => {
-      if (isBusy) {
+      if (isBusyRef.current) {
         setPendingMessages(prev => [...prev, {
           id: `user_${Date.now()}`,
           text: msg,
@@ -80,6 +113,7 @@ export const useMiniChat = () => {
         }]);
       } else {
         setIsBusy(true);
+        // addMessage uses a ref internally so it's safe to call without depending on messages state
         const updatedHistory = addMessage(msg, 'user', image);
         handleAIResponse(msg, updatedHistory).then(async () => {
           const t = await electronService.getTotalTokens();
@@ -93,10 +127,13 @@ export const useMiniChat = () => {
     const unsubscribeTask = electronService.onExecuteTask((task: any) => {
       const prompt = `[TAREFA AGENDADA] A tarefa a seguir foi disparada automaticamente, execute-a agora: "${task.description}"`;
       setIsBusy(true);
-      handleAIResponse(prompt, messages).then(async () => {
-        const t = await electronService.getTotalTokens();
-        setTokens(t);
-        processNextPending();
+      // We must get the latest messages for the prompt
+      electronService.getChat().then(currentHistory => {
+        handleAIResponse(prompt, currentHistory || []).then(async () => {
+          const t = await electronService.getTotalTokens();
+          setTokens(t);
+          processNextPending();
+        });
       });
     });
 
@@ -111,7 +148,20 @@ export const useMiniChat = () => {
       if (unsubscribeTask) unsubscribeTask();
       globalThis.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isBusy, currentModel, addMessage, handleAIResponse, handleMinimize, messages]);
+  }, [addMessage, handleAIResponse, handleMinimize]); // Removed isBusy, currentModel, messages from dependencies
+
+  const handleSelectModel = async (modelId: string) => {
+    setCurrentModel(modelId);
+    try {
+      const settings = await electronService.getSettings();
+      if (settings) {
+        settings.general.minichatModel = modelId;
+        await electronService.saveSettings(settings);
+      }
+    } catch (err) {
+      console.error('Failed to persist model selection from minichat:', err);
+    }
+  };
 
   return {
     messages,
@@ -129,13 +179,16 @@ export const useMiniChat = () => {
     copiedId,
     chatEndRef,
     addMessage,
-    setCurrentModel,
+    setCurrentModel: handleSelectModel,
     setIsSettingsOpen,
     setMenuView,
     togglePin,
     handleMinimize,
     startResizing,
-    clearHistory,
+    clearHistory: () => {
+      setTimer(0);
+      clearHistory();
+    },
     copyToClipboard
   };
 };

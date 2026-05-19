@@ -8,9 +8,23 @@ const logger = require('../services/logger');
  */
 function applyStealthMode(enabled) {
   const allWindows = BrowserWindow.getAllWindows();
+  console.log(`[SETTINGS_STEALTH] Applying stealth mode (${enabled}) to ${allWindows.length} windows.`);
   allWindows.forEach(win => {
     if (!win.isDestroyed()) {
-      win.setContentProtection(enabled);
+      const url = win.webContents.getURL();
+      const match = url.match(/\?window=([^&]+)/);
+      const name = match ? match[1] : win.getTitle() || 'unknown';
+      
+      try {
+        const r1 = win.setContentProtection(false);
+        let r2 = null;
+        if (enabled) {
+          r2 = win.setContentProtection(true);
+        }
+        console.log(`[SETTINGS_STEALTH] Window: ${name} (alwaysOnTop: ${win.isAlwaysOnTop()}, visible: ${win.isVisible()}) -> setFalse: ${r1}, setTrue: ${r2}`);
+      } catch (err) {
+        console.error(`[SETTINGS_STEALTH] Failed to set content protection on ${name}:`, err);
+      }
     }
   });
   logger.info('SETTINGS', `Stealth mode ${enabled ? 'enabled' : 'disabled'} on ${allWindows.length} window(s).`);
@@ -42,6 +56,15 @@ function registerSettingsHandlers() {
       jsonStore.saveSettings(settings);
       applyStealthMode(settings.general.stealthMode);
       applyApiKey(settings.general.apiKey);
+
+      // Notify all active windows that settings have been updated
+      const allWindows = BrowserWindow.getAllWindows();
+      allWindows.forEach(win => {
+        if (!win.isDestroyed()) {
+          win.webContents.send('settings-updated', settings);
+        }
+      });
+      
       return { success: true };
     } catch (err) {
       logger.error('SETTINGS', 'save-settings error', err);
@@ -60,12 +83,13 @@ function registerSettingsHandlers() {
     }
   });
 
-  // Returns history data for the History tab
+  // Returns history data for the History tab — reads from sessions store (properly grouped)
   ipcMain.handle('get-history-data', () => {
     try {
-      const susurroHistory = jsonStore.getSusurroHistory();
-      const chatHistory = jsonStore.getChatHistory();
-      return { success: true, data: { susurroHistory, chatHistory } };
+      const sessions = jsonStore.getSessions();
+      const minichat = sessions.filter(s => s.type !== 'susurro');
+      const transcriptions = sessions.filter(s => s.type === 'susurro');
+      return { success: true, data: { susurroHistory: transcriptions, chatHistory: minichat } };
     } catch (err) {
       logger.error('SETTINGS', 'get-history-data error', err);
       return { success: false, error: err.message };

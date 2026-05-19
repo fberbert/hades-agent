@@ -57,10 +57,10 @@ app.whenReady().then(() => {
   setTimeout(() => dreamService.runDreamCycle(), 10000); // 10s after start
   setInterval(() => dreamService.runDreamCycle(), 1000 * 60 * 60 * 24); // Every 24h
 
-  // Create Initial Windows
-  windowManager.createCommandWindow();
-  windowManager.createVoiceWindow();
-  windowManager.createSusurroWindow();
+  // Create Initial Windows (Created on-demand via shortcuts to ensure DWM affinity sticks)
+  // windowManager.createCommandWindow();
+  // windowManager.createVoiceWindow();
+  // windowManager.createSusurroWindow();
 
   // Splash Window — shown at startup, auto-closes after 2.8s
   const splashWin = windowManager.createWindow('splash');
@@ -80,7 +80,8 @@ app.on('before-quit', () => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  // Prevent quitting when all windows are closed, as Hades runs in the background system tray.
+  // The app only quits when 'Sair' is selected in the tray menu.
 });
 
 app.on('will-quit', () => {
@@ -103,15 +104,23 @@ ipcMain.on('send-message', (event, message, image) => {
       cmdWin.focus();
     }
   } else {
+    // Armazena a mensagem pendente até que a janela do chat e o React estejam totalmente carregados e prontos
+    appState.pendingMessage = { message, image };
     chatWin = windowManager.createChatWindow(false);
-    chatWin.webContents.once('did-finish-load', () => {
-      chatWin.webContents.send('new-message', message, image);
+  }
+});
 
-      // Recupera o foco após a nova janela terminar de carregar e abrir
-      const cmdWin = windowManager.get('command');
-      if (cmdWin && cmdWin.isVisible()) {
-        cmdWin.focus();
-      }
-    });
+// Listener para quando o Chat e React estão totalmente carregados e montados
+ipcMain.on('chat-window-ready', () => {
+  const chatWin = windowManager.get('chat');
+  if (chatWin && appState.pendingMessage) {
+    chatWin.webContents.send('new-message', appState.pendingMessage.message, appState.pendingMessage.image);
+    appState.pendingMessage = null;
+  }
+
+  // Recupera o foco para o command bar após a janela de chat estar pronta
+  const cmdWin = windowManager.get('command');
+  if (cmdWin && cmdWin.isVisible()) {
+    cmdWin.focus();
   }
 });

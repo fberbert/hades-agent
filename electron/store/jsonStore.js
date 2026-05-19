@@ -18,7 +18,8 @@ class JsonStore {
       translation: path.join(this.userDataPath, 'translation_cache.json'),
       susurro: path.join(this.userDataPath, 'susurro_history.json'),
       personas: path.join(this.userDataPath, 'personas.json'),
-      settings: path.join(this.userDataPath, 'settings.json')
+      settings: path.join(this.userDataPath, 'settings.json'),
+      sessions: path.join(this.userDataPath, 'sessions.json')
     };
 
     /** Default settings schema */
@@ -46,6 +47,7 @@ class JsonStore {
       chatHistory: [],
       personas: [],
       susurroHistory: [],
+      sessions: [],
       totalTokens: 0,
       translationCache: {},
       settings: defaultSettings
@@ -65,6 +67,7 @@ class JsonStore {
     this.cache.chatHistory = this.safeLoad(this.paths.history, []);
     this.cache.personas = this.safeLoad(this.paths.personas, []);
     this.cache.susurroHistory = this.safeLoad(this.paths.susurro, []);
+    this.cache.sessions = this.safeLoad(this.paths.sessions, []);
     this.cache.totalTokens = this.safeLoad(this.paths.tokens, { total: 0 }).total || 0;
     this.cache.translationCache = this.safeLoad(this.paths.translation, {});
     // Deep merge so new keys from defaultSettings survive missing fields in saved file
@@ -126,6 +129,12 @@ class JsonStore {
   saveSusurroHistory(history) {
     this.cache.susurroHistory = history;
     this.safeSave(this.paths.susurro, history);
+  }
+
+  getSessions() { return this.cache.sessions; }
+  saveSessions(sessions) {
+    this.cache.sessions = sessions;
+    this.safeSave(this.paths.sessions, sessions);
   }
 
   getTotalTokens() { return this.cache.totalTokens; }

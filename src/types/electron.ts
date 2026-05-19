@@ -38,9 +38,10 @@ export interface ElectronAPI {
   getChat: () => Promise<IPCResponse<any[]>>;
   saveChat: (history: any[]) => void;
   updateChatStatus: (hasMessages: boolean) => void;
-  endSession: () => void;
+  endSession: (type?: string) => Promise<IPCResponse<any>>;
   getTotalTokens: () => Promise<IPCResponse<number>>;
   updateTokens: (count: number) => Promise<IPCResponse<number>>;
+  chatWindowReady: () => void;
   
   // Susurro (Live Transcription)
   startSusurroLive: (personaPrompt?: string) => Promise<IPCResponse<boolean>>;
@@ -103,6 +104,7 @@ export interface ElectronAPI {
   saveSettings: (settings: SettingsData) => Promise<IPCResponse<void>>;
   applyStealthMode: (enabled: boolean) => Promise<IPCResponse<void>>;
   getHistoryData: () => Promise<IPCResponse<{ susurroHistory: any[], chatHistory: any[] }>>;
+  onSettingsUpdated: (callback: (settings: SettingsData) => void) => () => void;
 
   // Misc
   openExternal: (url: string) => void;

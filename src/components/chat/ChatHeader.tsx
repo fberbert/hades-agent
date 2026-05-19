@@ -1,4 +1,5 @@
 import React from 'react';
+import { Power, Minus } from 'lucide-react';
 import { formatTime } from '../../utils/formatters';
 
 interface ChatHeaderProps {
@@ -35,6 +36,19 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           <span className="header-separator" />
           <span className="timer-dot" />
           <span className="chat-timer-text">{formatTime(timer)}</span>
+          <div className="info-wrapper" style={{ marginLeft: '4px', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+            <button 
+              className="action-btn new-session-btn" 
+              onClick={onCloseSession}
+              title="Encerrar sessão"
+            >
+              <Power size={14} />
+            </button>
+            <div className="usage-popup" style={{ top: '130%', left: '50%', transform: 'translateX(-50%)', width: 'max-content' }}>
+              <div style={{ fontWeight: 600, fontSize: '11px', color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap' }}>Encerrar sessão</div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.45)', marginTop: '2px', whiteSpace: 'nowrap' }}>Histórico será salvo e chat fechado</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -76,9 +90,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           onClick={onMinimize}
           title="Minimizar"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+          <Minus size={18} />
         </button>
       </div>
     </div>

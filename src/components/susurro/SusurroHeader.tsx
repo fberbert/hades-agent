@@ -17,7 +17,6 @@ interface SusurroHeaderProps {
   setIsSettingsOpen: (open: boolean) => void;
   menuView: MenuView;
   setMenuView: (view: MenuView) => void;
-  targetLanguage: string;
   setTargetLanguage: (lang: string) => void;
   setTargetLanguageLabel: (label: string) => void;
   togglePin: () => void;
@@ -39,6 +38,7 @@ interface SusurroHeaderProps {
   increaseFontSize: () => void;
   decreaseFontSize: () => void;
   fontSize: number;
+  onCloseSession: () => void;
 }
 
 /**
@@ -63,11 +63,30 @@ export const SusurroHeader: React.FC<SusurroHeaderProps> = (props) => {
   return (
     <div className="susurro-header">
       <div className="header-left">
-        <div className={`status-indicator ${props.isTranscribing || props.isConnecting ? 'active' : ''}`}>
-          {props.isTranscribing || props.isConnecting ? <Activity size={16} className="pulse" /> : <div className="dot" />}
-          <span>{props.isTranscribing ? "Escutando..." : props.isConnecting ? "Conectando..." : "Susurro"}</span>
+        <div className="title-with-timer">
+          <div className={`status-indicator ${props.isTranscribing || props.isConnecting ? 'active' : ''}`} style={{ fontSize: '14px', marginRight: '6px' }}>
+            {props.isTranscribing || props.isConnecting ? <Activity size={16} className="pulse" /> : <div className="dot" />}
+            <span style={{ fontWeight: 600, color: props.isTranscribing || props.isConnecting ? '#ef4444' : '#fff' }}>
+              {props.isTranscribing ? "Escutando..." : props.isConnecting ? "Conectando..." : "Susurro"}
+            </span>
+          </div>
+          <span className="header-separator" />
+          <span className="timer-dot" />
+          <span className="chat-timer-text">{formatTime(props.timer)}</span>
+          <div className="info-wrapper" style={{ marginLeft: '4px', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+            <button 
+              className="action-btn new-session-btn" 
+              onClick={props.onCloseSession}
+              title="Nova sessão"
+            >
+              <Plus size={16} />
+            </button>
+            <div className="usage-popup" style={{ top: '130%', left: '50%', transform: 'translateX(-50%)', width: 'max-content' }}>
+              <div style={{ fontWeight: 600, fontSize: '11px', color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap' }}>Nova sessão</div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.45)', marginTop: '2px', whiteSpace: 'nowrap' }}>Histórico atual será salvo</div>
+            </div>
+          </div>
         </div>
-        <div className="session-timer">{formatTime(props.timer)}</div>
       </div>
 
       <div className="header-actions">
@@ -85,7 +104,7 @@ export const SusurroHeader: React.FC<SusurroHeaderProps> = (props) => {
         </div>
 
         <div className="settings-container" ref={settingsRef}>
-          <button className="action-btn" onClick={() => props.setIsSettingsOpen(!props.isSettingsOpen)}>
+          <button className={`action-btn settings-btn ${props.isSettingsOpen ? 'active' : ''}`} onClick={() => props.setIsSettingsOpen(!props.isSettingsOpen)}>
             <Settings size={18} />
           </button>
           {props.isSettingsOpen && (

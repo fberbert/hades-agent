@@ -12,6 +12,16 @@ export function useSettings() {
 
   useEffect(() => {
     loadSettings();
+
+    const unsubscribe = electronService.onSettingsUpdated((updatedData) => {
+      if (updatedData) {
+        setSettings(updatedData);
+      }
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const loadSettings = async () => {

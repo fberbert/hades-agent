@@ -11,7 +11,7 @@ let trayInstance = null;
  * @returns {Tray}
  */
 function createTray() {
-  const iconPath = path.join(__dirname, '../icon.png');
+  const iconPath = path.join(__dirname, '../public/icon/icon-tray-round.png');
   trayInstance = new Tray(iconPath);
 
   const contextMenu = Menu.buildFromTemplate([
