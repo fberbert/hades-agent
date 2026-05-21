@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { electronService } from '../services/electron';
-import { SettingsData } from '../types/electron';
+import { PlatformFeatureSummary, SettingsData } from '../types/electron';
 
 export type SettingsTab = 'history' | 'audio' | 'general' | 'shortcuts';
 
 export function useSettings() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('history');
   const [settings, setSettings] = useState<SettingsData | null>(null);
+  const [platformCapabilities, setPlatformCapabilities] = useState<PlatformFeatureSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -29,6 +30,8 @@ export function useSettings() {
     try {
       const data = await electronService.getSettings();
       if (data) setSettings(data);
+      const capabilities = await electronService.getPlatformCapabilities();
+      if (capabilities) setPlatformCapabilities(capabilities);
     } catch (err) {
       console.error('Failed to load settings:', err);
     } finally {
@@ -76,6 +79,7 @@ export function useSettings() {
     activeTab,
     setActiveTab,
     settings,
+    platformCapabilities,
     isLoading,
     isSaving,
     updateAudioSettings,

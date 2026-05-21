@@ -1,18 +1,28 @@
 {
   "name": "hades-agent",
   "version": "1.0.0",
-  "description": "",
+  "description": "Transparent desktop AI assistant with chat, transcription, and local task tools.",
   "main": "main.js",
   "scripts": {
     "dev:react": "vite",
     "dev:electron": "wait-on http://localhost:3000 && electron .",
-    "dev": "taskkill /F /IM electron.exe 2>nul & npx kill-port 3000 && concurrently \"npm run dev:react\" \"npm run dev:electron\"",
+    "dev:electron:linux": "wait-on http://localhost:3000 && electron --no-sandbox .",
+    "dev:win": "taskkill /F /IM electron.exe 2>nul & npx kill-port 3000 && concurrently \"npm run dev:react\" \"npm run dev:electron\"",
+    "dev:linux": "npx kill-port 3000 && concurrently \"npm run dev:react\" \"npm run dev:electron:linux\"",
+    "dev": "npm run dev:win",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "smoke:linux": "bash scripts/linux-smoke-check.sh",
+    "smoke:linux:runtime": "bash scripts/linux-runtime-smoke.sh",
     "build:app": "vite build",
-    "package": "electron-builder --win",
-    "dist": "vite build && electron-builder --win"
+    "package:win": "electron-builder --win",
+    "package:linux": "electron-builder --linux AppImage deb",
+    "package": "npm run package:win",
+    "dist:win": "vite build && electron-builder --win",
+    "dist:linux": "vite build && electron-builder --linux AppImage deb",
+    "dist": "npm run dist:win"
   },
   "build": {
     "appId": "com.victorl.hades",
@@ -37,6 +47,16 @@
         "zip"
       ],
       "icon": "public/icon/hades-tray-icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "public/icon",
+      "category": "Utility",
+      "maintainer": "fberbert <fberbert@users.noreply.github.com>",
+      "artifactName": "Hades-Agent-${version}-${arch}.${ext}"
     },
     "portable": {
       "artifactName": "Hades-Agent-${version}-portable.exe"

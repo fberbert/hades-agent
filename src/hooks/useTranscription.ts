@@ -185,6 +185,8 @@ export const useTranscription = (
       console.error('[TRANSCRIPTION] Failed to start audio recording');
       electronService.stopSusurroLive();
       setIsConnecting(false);
+      setIsTranscribing(false);
+      handleStatusUpdate('error');
     }
   }, [startRecording, stopRecording]);
 

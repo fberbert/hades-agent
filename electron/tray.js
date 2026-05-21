@@ -1,7 +1,7 @@
 const { Tray, Menu, app } = require('electron');
-const path = require('node:path');
 const windowManager = require('./windows/windowManager');
 const appState = require('./appState');
+const { getTrayIconPath } = require('./platform/icons');
 
 /** @type {Tray|null} */
 let trayInstance = null;
@@ -11,7 +11,7 @@ let trayInstance = null;
  * @returns {Tray}
  */
 function createTray() {
-  const iconPath = path.join(__dirname, '../public/icon/hades-tray-icon.ico');
+  const iconPath = getTrayIconPath(__dirname);
   trayInstance = new Tray(iconPath);
 
   const contextMenu = Menu.buildFromTemplate([

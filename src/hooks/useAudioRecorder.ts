@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { AUDIO_CONFIG } from '../constants';
 import { calculateRMS, floatTo16BitPCM, arrayBufferToBase64 } from '../utils/audio';
+import { getSystemAudioBlockReason } from '../utils/captureCapabilities';
 import { electronService } from '../services/electron';
 
 interface AudioRecorderOptions {
@@ -55,6 +56,12 @@ export const useAudioRecorder = () => {
       console.log(`[AUDIO_RECORDER] Starting recording. System Audio: ${isSystemAudio}`);
       
       if (isSystemAudio) {
+        const captureCapabilities = await electronService.getCaptureCapabilities();
+        const blockReason = getSystemAudioBlockReason(captureCapabilities);
+        if (blockReason) {
+          throw new Error(blockReason);
+        }
+
         // Use the centralized electronService to get the system audio source ID.
         // This is necessary for capturing desktop audio on Electron.
         const sourceId = await electronService.getSystemAudioSourceId();
@@ -63,7 +70,7 @@ export const useAudioRecorder = () => {
           return false;
         }
         console.log(`[AUDIO_RECORDER] System audio source ID obtained:`, sourceId);
-        if (!sourceId) throw new Error("Audio source not found");
+        if (!sourceId) throw new Error("System audio source not found or unsupported on this platform");
 
         stream = await navigator.mediaDevices.getUserMedia({
           audio: {

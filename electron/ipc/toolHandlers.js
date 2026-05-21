@@ -4,6 +4,7 @@ const logger = require('../services/logger');
 const skillService = require('../services/skillService');
 const sessionLogger = require('../services/sessionLogger');
 const searchService = require('../services/searchService');
+const { getCaptureCapabilities, buildCaptureError } = require('../platform/captureCapabilities');
 
 /**
 
@@ -56,11 +57,24 @@ function registerToolHandlers() {
     clipboard.writeText(text || '');
   });
 
+  ipcMain.handle('get-capture-capabilities', async () => {
+    return { success: true, data: getCaptureCapabilities() };
+  });
+
   /**
    * Retrieves the system audio source ID for Hadesback capture.
    */
   ipcMain.handle('get-system-audio-source-id', async () => {
     try {
+      const caps = getCaptureCapabilities();
+      if (process.platform === 'linux' && !caps.systemAudio.supported) {
+        return buildCaptureError(
+          'LINUX_SYSTEM_AUDIO_UNSUPPORTED',
+          caps.systemAudio.caveat,
+          caps
+        );
+      }
+
       const sources = await desktopCapturer.getSources({ types: ['screen', 'window'] });
       // Usually, we pick the primary screen or a specific "System" source if available
       const systemSource = sources.find(s =>
@@ -102,6 +116,7 @@ function registerToolHandlers() {
 
   /**
    * Captures all screens and returns their thumbnails as data URLs.
+   * Backward compatible: renderer expects an array/string fallback, not IPCResponse.
    */
   ipcMain.handle('capture-all-screens', async () => {
     try {

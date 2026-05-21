@@ -2,6 +2,7 @@ const { globalShortcut, app } = require('electron');
 const windowManager = require('./windows/windowManager');
 const jsonStore = require('./store/jsonStore');
 const appState = require('./appState');
+const { formatShortcutResult } = require('./platform/shortcuts');
 
 /**
  * Toggles the command window and associated chat window.
@@ -108,11 +109,13 @@ function toggleSettingsWindow() {
 function registerShortcut(name, key, handler) {
   try {
     const registered = globalShortcut.register(key, handler);
-    console.log(`[SHORTCUTS] Toggle ${name} shortcut (${key}): ${registered ? '✓ OK' : '✗ FAILED'}`);
-    return registered;
+    const result = formatShortcutResult(name, key, registered);
+    console.log(`[SHORTCUTS] Toggle ${name} shortcut (${key}): ${registered ? 'OK' : 'FAILED'}`);
+    return result;
   } catch (err) {
-    console.error(`[SHORTCUTS] Toggle ${name} shortcut (${key}): EXCEPTION - ${err.message}`);
-    return false;
+    const result = formatShortcutResult(name, key, false, err);
+    console.error(`[SHORTCUTS] Toggle ${name} shortcut (${key}): EXCEPTION - ${result.error}`);
+    return result;
   }
 }
 
@@ -135,13 +138,15 @@ function registerGlobalShortcuts(retryCount = 0) {
   let allRegistered = true;
 
   // Toggle Command Bar & Chat
-  if (!registerShortcut('Command', shortcuts.toggleCommand || 'Alt+D', toggleCommandWindow)) allRegistered = false;
+  const commandResult = registerShortcut('Command', shortcuts.toggleCommand || 'Alt+D', toggleCommandWindow);
+  if (!commandResult.registered) allRegistered = false;
 
   // Toggle Settings
-  if (!registerShortcut('Settings', shortcuts.toggleSettings || 'Alt+S', toggleSettingsWindow)) allRegistered = false;
+  const settingsResult = registerShortcut('Settings', shortcuts.toggleSettings || 'Alt+S', toggleSettingsWindow);
+  if (!settingsResult.registered) allRegistered = false;
 
   // Toggle Susurro (Live Transcription)
-  if (!registerShortcut('Susurro', shortcuts.toggleSusurro || 'Alt+B', () => {
+  const susurroResult = registerShortcut('Susurro', shortcuts.toggleSusurro || 'Alt+B', () => {
     const win = windowManager.get('susurro') || windowManager.createSusurroWindow();
     if (win.isVisible()) {
       win.hide();
@@ -152,10 +157,11 @@ function registerGlobalShortcuts(retryCount = 0) {
       // Sinaliza o frontend para iniciar a conexão imediatamente
       win.webContents.send('start-susurro');
     }
-  })) allRegistered = false;
+  });
+  if (!susurroResult.registered) allRegistered = false;
 
   // Trigger Voice Command
-  if (!registerShortcut('Voice', shortcuts.toggleVoice || 'Alt+V', () => {
+  const voiceResult = registerShortcut('Voice', shortcuts.toggleVoice || 'Alt+V', () => {
     const win = windowManager.get('voice') || windowManager.createVoiceWindow();
     if (win.isVisible()) {
       win.hide();
@@ -166,7 +172,8 @@ function registerGlobalShortcuts(retryCount = 0) {
       // Envia o evento para começar a gravar imediatamente após abrir
       win.webContents.send('start-voice');
     }
-  })) allRegistered = false;
+  });
+  if (!voiceResult.registered) allRegistered = false;
 
   // Retry if any shortcut failed (zombie process may still be releasing)
   if (allRegistered) {

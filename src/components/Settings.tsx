@@ -15,6 +15,7 @@ const Settings: React.FC = () => {
     activeTab,
     setActiveTab,
     settings,
+    platformCapabilities,
     isLoading,
     isSaving,
     updateAudioSettings,
@@ -58,6 +59,7 @@ const Settings: React.FC = () => {
             <AudioTab 
               settings={settings.audio} 
               updateSettings={updateAudioSettings} 
+              platformCapabilities={platformCapabilities}
             />
           )}
           
@@ -65,6 +67,7 @@ const Settings: React.FC = () => {
             <GeneralTab 
               settings={settings.general} 
               updateSettings={updateGeneralSettings} 
+              platformCapabilities={platformCapabilities}
             />
           )}
 

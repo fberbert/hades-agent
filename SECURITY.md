@@ -1,15 +1,15 @@
-# Security Policy
+# Política de Segurança
 
-## Reporting a Vulnerability
+## Reportar uma Vulnerabilidade
 
-We take the security of Hades Agent seriously. If you find a security vulnerability, please do not report it publicly through GitHub issues. Instead, please report it directly and privately.
+Levamos a segurança do Hades Agent a sério. Se você encontrar uma vulnerabilidade de segurança, não reporte publicamente por issues do GitHub. Reporte de forma direta e privada.
 
-To report a vulnerability, please email **pixodevbusiness@gmail.com** with the details of the vulnerability, including:
+Para reportar uma vulnerabilidade, envie um e-mail para **pixodevbusiness@gmail.com** com os detalhes, incluindo:
 
-* A description of the vulnerability.
-* Steps to reproduce the issue.
-* Any potential impact or exploits.
+- descrição da vulnerabilidade;
+- passos para reproduzir o problema;
+- impacto potencial ou possíveis formas de exploração.
 
-We will acknowledge receipt of your vulnerability report within 48 hours and work with you to resolve the issue as quickly as possible.
+Confirmaremos o recebimento do relatório em até 48 horas e trabalharemos com você para resolver o problema o mais rápido possível.
 
-Thank you for helping keep Hades Agent secure!
+Obrigado por ajudar a manter o Hades Agent seguro.

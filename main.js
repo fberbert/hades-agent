@@ -11,6 +11,8 @@ const appState = require('./electron/appState');
 const taskService = require('./electron/services/taskService');
 const dreamService = require('./electron/services/dreamService');
 const log = require('electron-log');
+const { applyShortcutRuntimeFlags } = require('./electron/platform/shortcuts');
+const { runLinuxRuntimeSmoke } = require('./electron/platform/runtimeSmoke');
 
 log.transports.file.level = 'info';
 log.transports.console.level = false; // Disable console logging in production
@@ -38,6 +40,7 @@ const loadEnv = () => {
 };
 
 loadEnv();
+applyShortcutRuntimeFlags(app);
 
 // 2. Performance & Stability
 app.disableHardwareAcceleration();
@@ -70,6 +73,7 @@ app.whenReady().then(() => {
   registerGlobalShortcuts();
   createTray();
   taskService.start();
+  runLinuxRuntimeSmoke({ app, windowManager, logger: console });
 
   // Phase 5 - Dreaming: Process backlogs and schedule cycle
   setTimeout(() => dreamService.runDreamCycle(), 10000); // 10s after start

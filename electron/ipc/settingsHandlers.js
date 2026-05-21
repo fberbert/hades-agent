@@ -2,6 +2,7 @@ const { ipcMain, BrowserWindow, globalShortcut } = require('electron');
 const jsonStore = require('../store/jsonStore');
 const logger = require('../services/logger');
 const registerGlobalShortcuts = require('../shortcuts');
+const { applyContentProtection, getWindowFeatureSummary } = require('../platform/windowFeatures');
 
 /**
  * Applies or removes content protection (Stealth Mode) on all active windows.
@@ -10,6 +11,7 @@ const registerGlobalShortcuts = require('../shortcuts');
 function applyStealthMode(enabled) {
   const allWindows = BrowserWindow.getAllWindows();
   console.log(`[SETTINGS_STEALTH] Applying stealth mode (${enabled}) to ${allWindows.length} windows.`);
+  const results = [];
   
   allWindows.forEach(win => {
     if (!win.isDestroyed()) {
@@ -21,15 +23,22 @@ function applyStealthMode(enabled) {
       if (name === 'splash') return;
       
       try {
-        const result = win.setContentProtection(enabled);
-        console.log(`[SETTINGS_STEALTH] Window: ${name} (alwaysOnTop: ${win.isAlwaysOnTop()}, visible: ${win.isVisible()}) -> setContentProtection(${enabled}): ${result}`);
+        const result = applyContentProtection(win, enabled, { logger: console });
+        results.push({ name, ...result });
+        console.log(`[SETTINGS_STEALTH] Window: ${name} (alwaysOnTop: ${win.isAlwaysOnTop()}, visible: ${win.isVisible()}) -> setContentProtection(${enabled}): ${result.success} (${result.reason})`);
       } catch (err) {
+        results.push({ name, success: false, supported: false, reason: err.message });
         console.error(`[SETTINGS_STEALTH] Failed to set content protection on ${name}:`, err);
       }
     }
   });
 
   logger.info('SETTINGS', `Stealth mode ${enabled ? 'enabled' : 'disabled'}. Applied to all background windows immediately.`);
+  return {
+    requested: enabled,
+    features: getWindowFeatureSummary(),
+    windows: results
+  };
 }
 
 /**
@@ -50,6 +59,10 @@ function registerSettingsHandlers() {
   // Returns all persisted settings
   ipcMain.handle('get-settings', () => {
     return jsonStore.getSettings();
+  });
+
+  ipcMain.handle('get-platform-capabilities', () => {
+    return { success: true, data: getWindowFeatureSummary() };
   });
 
   // Persists all settings and applies side-effects immediately
@@ -94,8 +107,8 @@ function registerSettingsHandlers() {
   // Standalone stealth mode toggle (used for live preview before save)
   ipcMain.handle('apply-stealth-mode', (event, enabled) => {
     try {
-      applyStealthMode(enabled);
-      return { success: true };
+      const result = applyStealthMode(enabled);
+      return { success: true, data: result };
     } catch (err) {
       logger.error('SETTINGS', 'apply-stealth-mode error', err);
       return { success: false, error: err.message };

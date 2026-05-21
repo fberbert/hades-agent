@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { SettingsData } from '../../types/electron';
+import { PlatformFeatureSummary, SettingsData } from '../../types/electron';
 import { MODELS } from '../../constants/models';
 import { Eye, EyeOff, Key, Cpu, Shield, Moon } from 'lucide-react';
 
 interface GeneralTabProps {
   settings: SettingsData['general'];
   updateSettings: (updates: Partial<SettingsData['general']>) => void;
+  platformCapabilities?: PlatformFeatureSummary | null;
 }
 
-const GeneralTab: React.FC<GeneralTabProps> = ({ settings, updateSettings }) => {
+const GeneralTab: React.FC<GeneralTabProps> = ({ settings, updateSettings, platformCapabilities }) => {
   const [showKey, setShowKey] = useState(false);
   const [showTavilyKey, setShowTavilyKey] = useState(false);
 
@@ -199,6 +200,11 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ settings, updateSettings }) => 
         <div className="setting-info">
           <div className="setting-title">Stealth Mode (Modo Furtivo)</div>
           <div className="setting-desc">Esse modo esconde o aplicativo de gravadores de telas como Discord, OBS e outros.</div>
+          {platformCapabilities?.contentProtection?.supported === false && (
+            <div className="setting-desc" style={{ color: '#fca5a5', marginTop: '6px' }}>
+              Stealth mode não é suportado neste ambiente. No Linux, a janela pode aparecer em capturas de tela.
+            </div>
+          )}
         </div>
         <div className="setting-control">
           <label className="switch" aria-label="Stealth Mode">

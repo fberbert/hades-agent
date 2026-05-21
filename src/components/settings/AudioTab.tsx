@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { SettingsData } from '../../types/electron';
+import { PlatformFeatureSummary, SettingsData } from '../../types/electron';
 import { Sliders, Volume2 } from 'lucide-react';
+import { getSystemAudioBlockReason } from '../../utils/captureCapabilities';
 
 interface AudioTabProps {
   settings: SettingsData['audio'];
   updateSettings: (updates: Partial<SettingsData['audio']>) => void;
+  platformCapabilities?: PlatformFeatureSummary | null;
 }
 
-const AudioTab: React.FC<AudioTabProps> = ({ settings, updateSettings }) => {
+const AudioTab: React.FC<AudioTabProps> = ({ settings, updateSettings, platformCapabilities }) => {
   const [inputs, setInputs] = useState<MediaDeviceInfo[]>([]);
   const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([]);
 
@@ -27,6 +29,12 @@ const AudioTab: React.FC<AudioTabProps> = ({ settings, updateSettings }) => {
     navigator.mediaDevices.addEventListener('devicechange', getDevices);
     return () => navigator.mediaDevices.removeEventListener('devicechange', getDevices);
   }, []);
+
+  const systemAudioBlockReason = getSystemAudioBlockReason(
+    platformCapabilities
+      ? { systemAudio: platformCapabilities.systemAudioCapture }
+      : null
+  );
 
   return (
     <div>
@@ -124,6 +132,11 @@ const AudioTab: React.FC<AudioTabProps> = ({ settings, updateSettings }) => {
         <div className="setting-info">
           <div className="setting-title">Áudio do Sistema (Desktop)</div>
           <div className="setting-desc">Capturar sons de outros aplicativos e sistema</div>
+          {systemAudioBlockReason && (
+            <div className="setting-desc" style={{ color: '#fca5a5', marginTop: '6px' }}>
+              Captura de áudio do sistema não está disponível neste ambiente Linux. Microfone e chat continuam funcionando.
+            </div>
+          )}
         </div>
         <div className="setting-control">
           <label className="switch" aria-label="Ativar áudio do sistema">

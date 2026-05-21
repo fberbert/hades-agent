@@ -7,6 +7,15 @@ export interface IPCResponse<T = any> {
   error?: string;
 }
 
+export interface PlatformFeatureSummary {
+  contentProtection: { supported: boolean; level: string };
+  micaBackground: { supported: boolean };
+  globalShortcuts: { supported: boolean; needsWaylandPortal: boolean };
+  trayPngIcon: { supported: boolean };
+  desktopCapture: { supported: boolean; caveat: string };
+  systemAudioCapture: { supported: boolean; caveat: string };
+}
+
 export interface ElectronAPI {
   // Window Control
   closeWindow: () => Promise<IPCResponse<void>>;
@@ -32,6 +41,7 @@ export interface ElectronAPI {
   getSources: () => Promise<any[]>;
   captureSource: (sourceId: string) => Promise<string>;
   captureAllScreens: () => Promise<string | string[]>;
+  getCaptureCapabilities: () => Promise<IPCResponse<any>>;
   onCaptureEvent: (callback: () => void) => () => void;
   
   // Chat History & Tokens
@@ -102,8 +112,9 @@ export interface ElectronAPI {
 
   // --- Settings ---
   getSettings: () => Promise<SettingsData>;
+  getPlatformCapabilities: () => Promise<IPCResponse<PlatformFeatureSummary>>;
   saveSettings: (settings: SettingsData) => Promise<IPCResponse<void>>;
-  applyStealthMode: (enabled: boolean) => Promise<IPCResponse<void>>;
+  applyStealthMode: (enabled: boolean) => Promise<IPCResponse<any>>;
   getHistoryData: () => Promise<IPCResponse<{ susurroHistory: any[], chatHistory: any[] }>>;
   onSettingsUpdated: (callback: (settings: SettingsData) => void) => () => void;
   disableShortcuts: () => Promise<IPCResponse<void>>;

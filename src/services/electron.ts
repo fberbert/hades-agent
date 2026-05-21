@@ -64,6 +64,9 @@ class ElectronService {
   async getSources() { return await this.electron?.getSources() || []; }
   async captureSource(sourceId: string) { return await this.electron?.captureSource(sourceId) || ''; }
   async captureAllScreens() { return await this.electron?.captureAllScreens() || ''; }
+  async getCaptureCapabilities() {
+    return await this.handleResponse(this.electron?.getCaptureCapabilities(), null, 'getCaptureCapabilities');
+  }
   onCaptureEvent(callback: () => void) {
     return this.electron?.onCaptureEvent(callback) || (() => {});
   }
@@ -137,6 +140,9 @@ class ElectronService {
       console.error('[ElectronService] getSettings exception:', error);
       return null;
     }
+  }
+  async getPlatformCapabilities() {
+    return await this.handleResponse(this.electron?.getPlatformCapabilities(), null, 'getPlatformCapabilities');
   }
   async saveSettings(settings: any) { return await this.handleResponse(this.electron?.saveSettings(settings), undefined, 'saveSettings'); }
   async applyStealthMode(enabled: boolean) { return await this.handleResponse(this.electron?.applyStealthMode(enabled), undefined, 'applyStealthMode'); }

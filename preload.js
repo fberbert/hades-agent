@@ -103,6 +103,7 @@ contextBridge.exposeInMainWorld('electron', {
   getSources: () => ipcRenderer.invoke('get-sources'),
   captureSource: (sourceId) => ipcRenderer.invoke('capture-source', sourceId),
   captureAllScreens: () => ipcRenderer.invoke('capture-all-screens'),
+  getCaptureCapabilities: () => ipcRenderer.invoke('get-capture-capabilities'),
   onCaptureEvent: (callback) => {
     const sub = (_event) => callback();
     ipcRenderer.on('capture-event', sub);
@@ -147,6 +148,7 @@ contextBridge.exposeInMainWorld('electron', {
 
   // --- Settings ---
   getSettings: () => ipcRenderer.invoke('get-settings'),
+  getPlatformCapabilities: () => ipcRenderer.invoke('get-platform-capabilities'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   applyStealthMode: (enabled) => ipcRenderer.invoke('apply-stealth-mode', enabled),
   getHistoryData: () => ipcRenderer.invoke('get-history-data'),

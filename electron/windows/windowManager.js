@@ -1,6 +1,7 @@
 const { BrowserWindow, shell, app, Menu } = require('electron');
 const configs = require('./windowConfigs');
 const log = require('electron-log');
+const { applyContentProtection } = require('../platform/windowFeatures');
 
 /**
  * WindowManager handles the lifecycle and management of all application windows.
@@ -125,8 +126,8 @@ class WindowManager {
         const isStealth = !!settings?.general?.stealthMode;
         console.log(`[WINDOW_MANAGER] Initializing stealth mode for ${name}. isStealth: ${isStealth}, alwaysOnTop: ${win.isAlwaysOnTop()}`);
         
-        const success = win.setContentProtection(isStealth);
-        console.log(`[WINDOW_MANAGER] Initial stealth mode applied for ${name}: ${success}`);
+        const result = applyContentProtection(win, isStealth, { logger: console });
+        console.log(`[WINDOW_MANAGER] Initial stealth mode applied for ${name}: ${result.success} (${result.reason})`);
       }
     } catch (e) {
       console.error(`[WINDOW_MANAGER] Failed to apply initial stealth mode for ${name}:`, e);
@@ -142,8 +143,8 @@ class WindowManager {
             const settings = store.getSettings();
             const isStealth = !!settings?.general?.stealthMode;
             
-            const success = win.setContentProtection(isStealth);
-            console.log(`[WINDOW_MANAGER] [Enforce:${eventSource}:${delay}ms] for ${name} (alwaysOnTop: ${win.isAlwaysOnTop()}, visible: ${win.isVisible()}) -> setContentProtection(${isStealth}): ${success}`);
+            const result = applyContentProtection(win, isStealth, { logger: console });
+            console.log(`[WINDOW_MANAGER] [Enforce:${eventSource}:${delay}ms] for ${name} (alwaysOnTop: ${win.isAlwaysOnTop()}, visible: ${win.isVisible()}) -> setContentProtection(${isStealth}): ${result.success} (${result.reason})`);
           } catch (e) {
             console.error(`[WINDOW_MANAGER] [Enforce:${eventSource}:${delay}ms] Failed for ${name}:`, e);
           }
