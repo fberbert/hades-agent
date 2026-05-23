@@ -15,7 +15,7 @@
     <td width="65%" valign="top" style="padding-left: 20px;">
       <h1 style="margin-top: 0; margin-bottom: 8px;">Hades Agent <img src="https://res.cloudinary.com/dmii83n8i/image/upload/v1779302517/hades-tray-icon-128_dks55n.png" width="36" height="36" align="center" style="display: inline-block; vertical-align: middle; margin-left: 6px;" alt="Ícone do Hades" /></h1>
       <p><strong>Hades é um companheiro desktop invisível e ultrarrápido, com consolidação autônoma de memória em segundo plano e agendador local de tarefas.</strong></p>
-      <p><strong>Limites de segurança:</strong> isolado em sandbox, com <strong>zero acesso de escrita no sistema</strong> para a IA (não cria, edita ou apaga arquivos, nem executa scripts). A IA fica restrita a consultas Google em tempo real via Tavily e logs locais de memória, mantendo o computador seguro.</p>
+      <p><strong>Limites de segurança:</strong> isolado em sandbox, com <strong>zero acesso de escrita no sistema</strong> para a IA (não cria, edita ou apaga arquivos, nem executa scripts). A IA usa OpenAI pelo processo principal do Electron e logs locais de memória, mantendo segredos fora do renderer.</p>
     </td>
   </tr>
 </table>
@@ -23,7 +23,7 @@
 <p align="center" style="margin-top: 20px;">
   <a href="https://github.com/victorl-dev/Hades-Agent/releases"><img src="https://img.shields.io/badge/Releases-Download-FF2A2A?style=for-the-badge&logo=github" alt="Releases"></a>
   <a href="https://github.com/victorl-dev/Hades-Agent/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="Licença: MIT"></a>
-  <a href="https://github.com/victorl-dev/Hades-Agent"><img src="https://img.shields.io/badge/Built%20With-Gemini%20Live%20API-blueviolet?style=for-the-badge" alt="Construído com Gemini Live"></a>
+  <a href="https://github.com/victorl-dev/Hades-Agent"><img src="https://img.shields.io/badge/Built%20With-OpenAI%20API-blueviolet?style=for-the-badge" alt="Construído com OpenAI"></a>
   <a href="https://github.com/victorl-dev/Hades-Agent"><img src="https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Plataforma: Windows"></a>
 </p>
 
@@ -34,11 +34,11 @@
 </tr>
 <tr>
   <td><b>🎙️ Transcrição em Tempo Real (Alt+B)</b></td>
-  <td>Pressione <code>Alt+B</code> para capturar e transcrever áudio interno do PC, como reuniões ou aulas, em tempo real. O fluxo envia áudio <strong>PCM 16 kHz</strong> por WebSocket full-duplex diretamente para a <strong>Gemini Live API</strong>.</td>
+  <td>Pressione <code>Alt+B</code> para abrir o HUD de transcrição. O backend realtime antigo foi removido; a transcrição realtime aguarda reimplementação com OpenAI Realtime.</td>
 </tr>
 <tr>
   <td><b>⚡ Barra de Comando Spotlight</b></td>
-  <td>Pressione <code>Alt+D</code> para abrir uma barra de comando flutuante e sem borda. Ela entrega respostas com contexto de internet em tempo real via Tavily Search API, permite anexar imagens, trocar modelos e responder sem sair do fluxo de trabalho.</td>
+  <td>Pressione <code>Alt+D</code> para abrir uma barra de comando flutuante e sem borda. Ela entrega respostas com contexto de internet via OpenAI Responses API, permite anexar imagens, trocar modelos e responder sem sair do fluxo de trabalho.</td>
 </tr>
 <tr>
   <td><b>💬 MiniChat de Sessão</b></td>
@@ -68,9 +68,8 @@
 > **Plataforma:** Hades é Windows-first. O suporte Linux é experimental e baseado em capacidades: os fluxos centrais de chat rodam depois da refatoração Linux, mas stealth/content protection e captura de áudio do sistema não são garantidos. macOS não é suportado.
 
 > [!IMPORTANT]
-> Hades requer duas chaves de API gratuitas para operar:
-> - **[Google Gemini API Key](https://aistudio.google.com/app/apikey)** - para inferência de IA e streaming de voz.
-> - **[Tavily Search API Key](https://app.tavily.com/)** - para busca web em tempo real.
+> Hades requer uma chave de API para operar:
+> - **OpenAI API Key** - para MiniChat, busca web, transcrição curta e Dreaming.
 
 ### Para Desenvolvedores (Build do Código-Fonte)
 
@@ -145,8 +144,7 @@ graph TD
     Dream[DreamService de Memória]:::service
     
     subgraph Cloud_APIs [Serviços de Inteligência em Nuvem]
-        Gemini[Gemini Live API]:::external
-        Tavily[Tavily Search API]:::external
+        OpenAI[OpenAI API]:::external
     end
 
     Main -->|Gerencia estado das janelas| UI_Layers
@@ -156,8 +154,7 @@ graph TD
     Main -->|Agenda consolidação de IA| Dream
     Dream -->|Persiste aprendizados| Store
     
-    Main <-->|Stream de áudio PCM 16kHz| Gemini
-    Main <-->|Consultas web assíncronas| Tavily
+    Main <-->|Responses, web_search e transcrição| OpenAI
 ```
 
 ---

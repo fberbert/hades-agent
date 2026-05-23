@@ -7,9 +7,9 @@ const { contextBridge, ipcRenderer } = require('electron');
  */
 contextBridge.exposeInMainWorld('electron', {
   // --- Core Messaging & UI ---
-  sendMessage: (message, image) => ipcRenderer.send('send-message', message, image),
+  sendMessage: (message, image, options) => ipcRenderer.send('send-message', message, image, options),
   onNewChatMessage: (callback) => {
-    const sub = (_event, msg, img) => callback(msg, img);
+    const sub = (_event, msg, img, options) => callback(msg, img, options);
     ipcRenderer.on('new-message', sub);
     return () => ipcRenderer.removeListener('new-message', sub);
   },
@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('electron', {
 
   // --- Window Management ---
   closeWindow: () => ipcRenderer.invoke('close-window'),
+  hideVoiceWindow: () => ipcRenderer.invoke('hide-voice-window'),
   minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
   resizeWindow: (w, h) => ipcRenderer.invoke('resize-window', { width: w, height: h }),
   showChat: () => ipcRenderer.send('show-chat'),
@@ -48,6 +49,7 @@ contextBridge.exposeInMainWorld('electron', {
   getTotalTokens: () => ipcRenderer.invoke('get-total-tokens'),
   endSession: (type) => ipcRenderer.invoke('end-session', type),
   chatWindowReady: () => ipcRenderer.send('chat-window-ready'),
+  assistantGenerateResponse: (payload) => ipcRenderer.invoke('assistant-generate-response', payload),
 
   // --- Tasks ---
   scheduleTask: (data) => ipcRenderer.invoke('schedule-task', data),
@@ -130,12 +132,12 @@ contextBridge.exposeInMainWorld('electron', {
 
   // --- Utility Tools ---
   openFileDialog: () => ipcRenderer.invoke('open-file-dialog'),
-  searchWeb: (query) => ipcRenderer.invoke('search-web', query),
   getLolPlayerStats: (args) => ipcRenderer.invoke('get-lol-player-stats', args),
   openExternal: (url) => ipcRenderer.send('open-external', url),
   copyToClipboard: (text) => ipcRenderer.send('copy-to-clipboard', text),
   getSystemAudioSourceId: () => ipcRenderer.invoke('get-system-audio-source-id'),
   transcribeAudio: (base64) => ipcRenderer.invoke('transcribe-audio', base64),
+  synthesizeSpeech: (text, options) => ipcRenderer.invoke('synthesize-speech', text, options),
 
   // --- Skills System ---
   saveSkill: (args) => ipcRenderer.invoke('save-skill', args),
@@ -145,6 +147,7 @@ contextBridge.exposeInMainWorld('electron', {
   // --- Session Logger ---
   logSession: (data) => ipcRenderer.invoke('log-session', data),
   getLearnings: () => ipcRenderer.invoke('get-learnings'),
+  logRendererDiagnostic: (source, message, detail) => ipcRenderer.send('renderer-diagnostic', source, message, detail),
 
   // --- Settings ---
   getSettings: () => ipcRenderer.invoke('get-settings'),

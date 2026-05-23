@@ -5,7 +5,7 @@
 Hades Agent tem duas zonas de confiança:
 
 - Processo principal Electron: operações desktop privilegiadas, persistência em filesystem, handlers IPC, ciclo de vida de janelas, atalhos, tray, serviços de transcrição, busca e agendamento de tarefas.
-- Renderer React: UI, captura de mídia via navegador, estado de chat, loop de requisição Gemini, orquestração de ferramentas e interação do usuário.
+- Renderer React: UI, captura de mídia via navegador, estado de chat, montagem de contexto/prompt e interação do usuário.
 
 A fronteira é `preload.js`. Código do renderer chama `window.electron`; `preload.js` encaminha para `ipcRenderer`; `electron/ipc/*Handlers.js` atende a solicitação no processo principal.
 
@@ -78,9 +78,11 @@ Ao adicionar ou alterar IPC, atualize todas as camadas juntas.
 
 `electron/services/` contém services de funcionalidade no main process:
 
-- `aiService.js` - geração Gemini para sugestões, títulos e transcrição de áudio.
-- `geminiLiveService.js` - sessão Gemini Live para transcrição PCM em tempo real.
-- `searchService.js` - busca web Tavily.
+- `openaiClient.js` - criação centralizada do cliente OpenAI a partir das settings/env.
+- `openaiResponsesService.js` - MiniChat e respostas auxiliares via OpenAI Responses API.
+- `openaiTranscriptionService.js` - transcrição WAV/base64 com `gpt-4o-mini-transcribe`.
+- `providerRouter.js` e `modelCatalog.js` - normalização de modelos/settings antigas e defaults OpenAI.
+- `aiService.js` - sugestões, títulos e transcrição de áudio com OpenAI.
 - `translationService.js` - wrapper de tradução.
 - `taskService.js` - polling e execução de tarefas agendadas.
 - `dreamService.js` - consolidação de memória em segundo plano sobre logs de sessão.
@@ -105,21 +107,19 @@ Hooks do renderer devem acessar esses services por IPC, não por import direto.
 ### Loop de IA do MiniChat
 
 1. `useMiniChat` recebe uma mensagem pendente.
-2. `useGemini` monta o system prompt do Hades usando `src/constants/prompts.ts`.
-3. O hook chama Gemini com as ferramentas declaradas em `src/constants/tools.ts`.
-4. Chamadas de ferramenta são executadas localmente em `executeTool`.
-5. Resultados das ferramentas são adicionados ao loop de conversa.
-6. O texto final é adicionado como mensagem do assistente e persistido.
+2. `useAssistantInference` monta o system prompt do Hades usando `src/constants/prompts.ts`.
+3. O hook chama `assistantGenerateResponse` por IPC.
+4. `electron/ipc/aiHandlers.js` delega para `openaiResponsesService.js` com `gpt-5-nano` por padrão e `web_search_preview` quando o turno pede web.
+5. O texto final é adicionado como mensagem do assistente e persistido.
 
 ### Transcrição Ao Vivo do Susurro
 
 1. Usuário abre Susurro com `Alt+B`.
 2. `shortcuts.js` mostra `susurro` e envia `start-susurro`.
 3. `useTranscription` chama `startSusurroLive`.
-4. `susurroHandlers.js` delega para `geminiLiveService.start`.
-5. `useAudioRecorder` captura áudio suportado, converte chunks para PCM16/base64 e envia `susurro-send-chunk`.
-6. `geminiLiveService` envia chunks ao Gemini Live e emite deltas de transcrição.
-7. O renderer atualiza estado de transcript e tradução/sugestões opcionais.
+4. `susurroHandlers.js` lê settings, obtém a OpenAI API key no main process e cria `OpenAIRealtimeTranscriptionSession`.
+5. O renderer envia chunks PCM16/base64 a 24 kHz por `susurro-send-chunk`; o handler encaminha para o WebSocket OpenAI Realtime.
+6. Eventos normalizados pelo service voltam ao renderer por `susurro-live-status` e `susurro-live-delta`.
 
 ## Regras Arquiteturais
 
@@ -127,6 +127,7 @@ Hooks do renderer devem acessar esses services por IPC, não por import direto.
 - Mantenha código do renderer declarativo e seguro para navegador.
 - Mantenha nomes de IPC estáveis, a menos que todas as camadas de ponte, tipos, wrappers e handlers sejam atualizadas.
 - Mantenha `jsonStore.js` como entrada única de persistência.
+- Mantenha chamadas OpenAI no main process; o renderer não deve guardar ou usar diretamente a OpenAI API key.
 - Mantenha configs de janelas centralizadas.
 - Mantenha texto de prompts em `prompts/`, não embutido em componentes.
 - Mantenha validação determinística em código, não em prompts de modelo.

@@ -13,6 +13,7 @@ const dreamService = require('./electron/services/dreamService');
 const log = require('electron-log');
 const { applyShortcutRuntimeFlags } = require('./electron/platform/shortcuts');
 const { runLinuxRuntimeSmoke } = require('./electron/platform/runtimeSmoke');
+const { detectPlatform } = require('./electron/platform/capabilities');
 
 log.transports.file.level = 'info';
 log.transports.console.level = false; // Disable console logging in production
@@ -39,12 +40,33 @@ const loadEnv = () => {
   // No longer rely strictly on .env for API Key as it is managed via UI settings.
 };
 
+const platformInfo = detectPlatform();
+
+function settleChatVisibility(chatWin, cmdWin) {
+  if (platformInfo.isLinux) {
+    if (cmdWin?.isVisible()) cmdWin.hide();
+    chatWin.show();
+    chatWin.moveTop();
+    chatWin.focus();
+    return;
+  }
+
+  if (cmdWin?.isVisible()) {
+    log.info('[MAIN] Re-raising command bar on top of chat');
+    cmdWin.setAlwaysOnTop(true, 'pop-up-menu');
+    cmdWin.moveTop();
+    cmdWin.focus();
+    cmdWin.webContents.send('focus-input');
+  }
+}
+
 loadEnv();
 applyShortcutRuntimeFlags(app);
 
 // 2. Performance & Stability
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch('disable-gpu'); // Mica/Transparency stability on Windows
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 // 3. Application Lifecycle
 app.whenReady().then(() => {
@@ -62,7 +84,7 @@ app.whenReady().then(() => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self' http://localhost:3000; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:3000 blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' http://localhost:3000; img-src 'self' data: blob: http://localhost:3000; font-src 'self' data: http://localhost:3000; connect-src 'self' https: wss: http://localhost:3000 ws://localhost:3000;"
+          "default-src 'self' http://localhost:3000; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:3000 blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' http://localhost:3000; img-src 'self' data: blob: http://localhost:3000; font-src 'self' data: http://localhost:3000; media-src 'self' data: blob:; connect-src 'self' https: wss: http://localhost:3000 ws://localhost:3000;"
         ],
       },
     });
@@ -112,7 +134,7 @@ app.on('will-quit', () => {
 });
 
 // 5. Cross-Window Communication (Orchestration)
-ipcMain.on('send-message', (event, message, image) => {
+ipcMain.on('send-message', (event, message, image, options = {}) => {
   log.info('');
   log.info('=== [MAIN] ============ SEND-MESSAGE START ============');
   appState.chatHasMessages = true;
@@ -129,19 +151,12 @@ ipcMain.on('send-message', (event, message, image) => {
     chatWin.show();
     chatWin.moveTop();
     log.info(`[MAIN] Chat after show: visible=${chatWin.isVisible()} alwaysOnTop=${chatWin.isAlwaysOnTop()}`);
-    chatWin.webContents.send('new-message', message, image);
+    chatWin.webContents.send('new-message', message, image, options);
 
-    // Re-raise command bar on top
-    if (cmdWin?.isVisible()) {
-      log.info('[MAIN] Re-raising command bar on top of chat');
-      cmdWin.setAlwaysOnTop(true, 'pop-up-menu');
-      cmdWin.moveTop();
-      cmdWin.focus();
-      cmdWin.webContents.send('focus-input');
-    }
+    settleChatVisibility(chatWin, cmdWin);
   } else {
     log.info('[MAIN] Chat window not ready, storing pending message');
-    appState.pendingMessage = { message, image };
+    appState.pendingMessage = { message, image, options };
     windowManager.createChatWindow(false);
   }
   log.info('=== [MAIN] ============ SEND-MESSAGE END ==============');
@@ -155,7 +170,12 @@ ipcMain.on('chat-window-ready', () => {
   const chatWin = windowManager.get('chat');
   if (chatWin && appState.pendingMessage) {
     log.info('[MAIN] Sending pending message to chat');
-    chatWin.webContents.send('new-message', appState.pendingMessage.message, appState.pendingMessage.image);
+    chatWin.webContents.send(
+      'new-message',
+      appState.pendingMessage.message,
+      appState.pendingMessage.image,
+      appState.pendingMessage.options || {}
+    );
     appState.pendingMessage = null;
 
     // Show the newly loaded chat window above everything
@@ -166,16 +186,8 @@ ipcMain.on('chat-window-ready', () => {
     log.info(`[MAIN] Chat after show: visible=${chatWin.isVisible()} alwaysOnTop=${chatWin.isAlwaysOnTop()}`);
   }
 
-  // Re-raise command bar on top
   const cmdWin = windowManager.get('command');
-  if (cmdWin?.isVisible()) {
-    log.info('[MAIN] Re-raising command bar on top of chat');
-    cmdWin.setAlwaysOnTop(true, 'pop-up-menu');
-    cmdWin.show();
-    cmdWin.moveTop();
-    cmdWin.focus();
-    cmdWin.webContents.send('focus-input');
-  }
+  if (chatWin) settleChatVisibility(chatWin, cmdWin);
   console.log('=== [MAIN] ============ CHAT-WINDOW-READY END ==============');
   console.log('');
 });

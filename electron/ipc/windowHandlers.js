@@ -23,6 +23,15 @@ function registerWindowHandlers() {
     return { success: false, error: "Window not found" };
   });
 
+  ipcMain.handle('hide-voice-window', () => {
+    const voiceWin = windowManager.get('voice');
+    if (voiceWin && !voiceWin.isDestroyed()) {
+      voiceWin.hide();
+      return { success: true };
+    }
+    return { success: false, error: "Voice window not found" };
+  });
+
   /**
    * Generic handler to minimize the active window.
    */

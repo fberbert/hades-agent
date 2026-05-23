@@ -1,10 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { useChatState } from './useChatState';
-import { useGemini } from './useGemini';
+import { useAssistantInference } from './useAssistantInference';
 import { useWindowControl } from './useWindowControl';
 import { useClipboard } from './useClipboard';
 import { DEFAULT_MODEL } from '../constants';
 import { electronService } from '../services/electron';
+import { ChatMessageOptions, ResponseSettings } from '../types/electron';
+import { shouldSpeakResponse } from '../utils/responseMode';
+
+type PendingChatMessage = {
+  id: string;
+  text: string;
+  sender: 'user';
+  timestamp: Date;
+  status: 'sent';
+  image?: string;
+  speakResponse?: boolean;
+};
 
 /**
  * Hook to manage the state and logic for the MiniChat component.
@@ -23,7 +35,11 @@ export const useMiniChat = () => {
   } = useChatState();
 
   const [currentModel, setCurrentModel] = useState<string>(DEFAULT_MODEL);
-  const { isThinking, activeTool, handleAIResponse } = useGemini(currentModel, addMessage);
+  const responseSettingsRef = useRef<ResponseSettings>({
+    audioForVoiceInput: true,
+    alwaysAudio: false,
+  });
+  const { isThinking, activeTool, handleAIResponse } = useAssistantInference(currentModel, addMessage);
   const { isPinned, isResizing, togglePin, handleMinimize, startResizing } = useWindowControl();
   const { copiedId, copyToClipboard } = useClipboard();
 
@@ -44,6 +60,9 @@ export const useMiniChat = () => {
     electronService.getSettings().then(settings => {
       if (settings?.general?.minichatModel) {
         setCurrentModel(settings.general.minichatModel);
+      }
+      if (settings?.response) {
+        responseSettingsRef.current = settings.response;
       }
     });
   }, []);
@@ -73,6 +92,9 @@ export const useMiniChat = () => {
       if (settings?.general?.minichatModel) {
         setCurrentModel(settings.general.minichatModel);
       }
+      if (settings?.response) {
+        responseSettingsRef.current = settings.response;
+      }
     });
     return () => {
       if (unsubscribe) unsubscribe();
@@ -87,10 +109,12 @@ export const useMiniChat = () => {
   // Process queued messages when not busy
   const processNextPending = async () => {
     if (pendingMessagesRef.current.length > 0) {
-      const nextMsg = pendingMessagesRef.current[0];
+      const nextMsg = pendingMessagesRef.current[0] as PendingChatMessage;
       setPendingMessages(prev => prev.slice(1));
       const updatedHistory = addMessage(nextMsg.text, 'user', nextMsg.image);
-      const loopTokens = await handleAIResponse(nextMsg.text, updatedHistory);
+      const loopTokens = await handleAIResponse(nextMsg.text, updatedHistory, {
+        speakResponse: nextMsg.speakResponse
+      });
       
       // Update tokens after response
       setTokens(prev => {
@@ -115,7 +139,9 @@ export const useMiniChat = () => {
   // Handle incoming messages and task executions from Electron IPC
   useEffect(() => {
     // New message from Command Bar
-    const unsubscribeMsg = electronService.onNewChatMessage((msg: string, image?: string) => {
+    const unsubscribeMsg = electronService.onNewChatMessage((msg: string, image?: string, options?: ChatMessageOptions) => {
+      const source = options?.source || (options?.speakResponse ? 'voice' : 'text');
+      const speakResponse = shouldSpeakResponse(responseSettingsRef.current, { source });
       if (isBusyRef.current) {
         setPendingMessages(prev => [...prev, {
           id: `user_${Date.now()}`,
@@ -123,13 +149,14 @@ export const useMiniChat = () => {
           sender: 'user',
           timestamp: new Date(),
           status: 'sent',
-          image
-        }]);
+          image,
+          speakResponse
+        } as PendingChatMessage]);
       } else {
         setIsBusy(true);
         // addMessage uses a ref internally so it's safe to call without depending on messages state
         const updatedHistory = addMessage(msg, 'user', image);
-        handleAIResponse(msg, updatedHistory).then(async (loopTokens) => {
+        handleAIResponse(msg, updatedHistory, { speakResponse }).then(async (loopTokens) => {
           setTokens(prev => {
             const next = prev + (loopTokens || 0);
             localStorage.setItem('minichat_session_tokens', next.toString());

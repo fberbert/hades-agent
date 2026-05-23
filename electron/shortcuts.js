@@ -106,6 +106,28 @@ function toggleSettingsWindow() {
   }
 }
 
+/**
+ * Toggles the MiniChat window without requiring a new message.
+ */
+function toggleChatWindow() {
+  const win = windowManager.get('chat') || windowManager.createChatWindow();
+  if (!win) {
+    console.error('[SHORTCUTS] Chat window is null or undefined.');
+    return;
+  }
+
+  if (win.isVisible()) {
+    win.hide();
+    return;
+  }
+
+  windowManager.hideAllExcept(['chat']);
+  win.setAlwaysOnTop(appState.isChatPinned, 'pop-up-menu');
+  win.moveTop();
+  win.show();
+  win.focus();
+}
+
 function registerShortcut(name, key, handler) {
   try {
     const registered = globalShortcut.register(key, handler);
@@ -130,6 +152,7 @@ function registerGlobalShortcuts(retryCount = 0) {
   const settings = jsonStore.getSettings();
   const shortcuts = settings.shortcuts || {
     toggleCommand: 'Alt+D',
+    toggleChat: 'Alt+C',
     toggleSettings: 'Alt+S',
     toggleSusurro: 'Alt+B',
     toggleVoice: 'Alt+V'
@@ -140,6 +163,10 @@ function registerGlobalShortcuts(retryCount = 0) {
   // Toggle Command Bar & Chat
   const commandResult = registerShortcut('Command', shortcuts.toggleCommand || 'Alt+D', toggleCommandWindow);
   if (!commandResult.registered) allRegistered = false;
+
+  // Toggle MiniChat directly
+  const chatResult = registerShortcut('Chat', shortcuts.toggleChat || 'Alt+C', toggleChatWindow);
+  if (!chatResult.registered) allRegistered = false;
 
   // Toggle Settings
   const settingsResult = registerShortcut('Settings', shortcuts.toggleSettings || 'Alt+S', toggleSettingsWindow);
@@ -162,15 +189,20 @@ function registerGlobalShortcuts(retryCount = 0) {
 
   // Trigger Voice Command
   const voiceResult = registerShortcut('Voice', shortcuts.toggleVoice || 'Alt+V', () => {
-    const win = windowManager.get('voice') || windowManager.createVoiceWindow();
+    const existingWin = windowManager.get('voice');
+    const win = existingWin || windowManager.createVoiceWindow();
     if (win.isVisible()) {
       win.hide();
     } else {
       windowManager.hideAllExcept(['voice']);
       win.show();
       win.focus();
-      // Envia o evento para começar a gravar imediatamente após abrir
-      win.webContents.send('start-voice');
+      const startVoice = () => win.webContents.send('start-voice');
+      if (existingWin || !win.webContents.isLoading()) {
+        startVoice();
+      } else {
+        win.webContents.once('did-finish-load', startVoice);
+      }
     }
   });
   if (!voiceResult.registered) allRegistered = false;

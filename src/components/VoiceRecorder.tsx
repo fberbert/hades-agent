@@ -4,7 +4,7 @@ import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
 import { electronService } from '../services/electron';
 
 /**
- * VoiceRecorder: One-shot voice command recorder with Gemini transcription.
+ * VoiceRecorder: One-shot voice command recorder with OpenAI transcription.
  * Optimized with useVoiceRecorder hook and shared audio utilities.
  */
 const VoiceRecorder: React.FC = () => {
@@ -22,15 +22,17 @@ const VoiceRecorder: React.FC = () => {
   } = useVoiceRecorder();
 
   const handleAction = useCallback(() => {
+    if (isTranscribing) return;
     if (step === 1) start();
     else if (step === 2) stopAndTranscribe();
     else if (step === 3) finalize();
-  }, [step, start, stopAndTranscribe, finalize]);
+  }, [isTranscribing, step, start, stopAndTranscribe, finalize]);
 
   const getButtonText = (s: number) => {
     if (s === 1) return 'Gravar';
     if (s === 2) return 'Parar';
-    return 'Confirmar';
+    if (isTranscribing) return 'Transcrevendo';
+    return 'Enviar';
   };
   const buttonText = getButtonText(step);
 
@@ -45,7 +47,7 @@ const VoiceRecorder: React.FC = () => {
       if (e.key === 'Escape') {
         stopRecording();
         resetState();
-        electronService.closeWindow();
+        electronService.hideVoiceWindow();
       }
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -57,10 +59,15 @@ const VoiceRecorder: React.FC = () => {
     return () => {
       if (removeStartListener) removeStartListener();
       if (removeSendListener) removeSendListener();
-      stopRecording();
       globalThis.removeEventListener('keydown', handleKeyDown);
     };
   }, [handleAction, stopRecording, resetState]);
+
+  useEffect(() => {
+    return () => {
+      stopRecording();
+    };
+  }, [stopRecording]);
 
   return (
     <div className="app-container voice-mode">
@@ -100,11 +107,11 @@ const VoiceRecorder: React.FC = () => {
       </div>
 
       <div className="command-footer">
-        <button className="footer-btn primary" onClick={handleAction}>
+        <button className="footer-btn primary" onClick={handleAction} disabled={isTranscribing}>
           <span className="keycap-box">{step === 1 ? 'ALT+V' : 'ESPAÇO'}</span>
           <span className="keycap-text">{buttonText}</span>
         </button>
-        <button className="footer-btn" onClick={() => { stopRecording(); resetState(); electronService.closeWindow(); }}>
+        <button className="footer-btn" onClick={() => { stopRecording(); resetState(); electronService.hideVoiceWindow(); }}>
           <span className="keycap-box">ESC</span>
           <span className="keycap-text">Cancelar</span>
         </button>

@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { PlatformFeatureSummary, SettingsData } from '../../types/electron';
-import { MODELS } from '../../constants/models';
+import {
+  DEFAULT_OPENAI_MODELS,
+  ModelDefinition,
+  getChatModels,
+  getDefaultChatModel,
+  getModelsByType,
+  isModelType
+} from '../../constants/models';
 import { Eye, EyeOff, Key, Cpu, Shield, Moon } from 'lucide-react';
 
 interface GeneralTabProps {
@@ -9,9 +16,70 @@ interface GeneralTabProps {
   platformCapabilities?: PlatformFeatureSummary | null;
 }
 
+interface SecretInputProps {
+  label: string;
+  placeholder: string;
+  value: string;
+  isVisible: boolean;
+  onToggleVisible: () => void;
+  onChange: (value: string) => void;
+}
+
+const SecretInput: React.FC<SecretInputProps> = ({
+  label,
+  placeholder,
+  value,
+  isVisible,
+  onToggleVisible,
+  onChange
+}) => (
+  <div className="setting-control" style={{ position: 'relative' }}>
+    <input
+      type={isVisible ? 'text' : 'password'}
+      className="settings-input"
+      aria-label={label}
+      placeholder={placeholder}
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      autoComplete="off"
+      spellCheck={false}
+      style={{ paddingRight: '40px' }}
+    />
+    <button
+      type="button"
+      aria-label={isVisible ? 'Ocultar chave' : 'Mostrar chave'}
+      onClick={onToggleVisible}
+      style={{
+        position: 'absolute',
+        right: '10px',
+        background: 'transparent',
+        border: 'none',
+        color: 'rgba(255,255,255,0.5)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      {isVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+    </button>
+  </div>
+);
+
+const selectValue = (
+  currentValue: string | undefined,
+  options: ModelDefinition[],
+  fallback: string
+) => {
+  return options.some(model => model.id === currentValue) ? currentValue : fallback;
+};
+
 const GeneralTab: React.FC<GeneralTabProps> = ({ settings, updateSettings, platformCapabilities }) => {
-  const [showKey, setShowKey] = useState(false);
-  const [showTavilyKey, setShowTavilyKey] = useState(false);
+  const [showOpenAIKey, setShowOpenAIKey] = useState(false);
+  const chatModels = getChatModels();
+  const transcribeModels = getModelsByType('transcribe');
+  const realtimeModels = getModelsByType('realtime');
+  const defaultChatModel = getDefaultChatModel();
 
   return (
     <div>
@@ -28,112 +96,17 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ settings, updateSettings, platf
 
       <div className="setting-row">
         <div className="setting-info">
-          <div className="setting-title">Google AI Studio</div>
+          <div className="setting-title">OpenAI API Key</div>
+          <div className="setting-desc">Usada pelo MiniChat, transcrição, Dreaming e modelos realtime.</div>
         </div>
-        <div className="setting-control" style={{ position: 'relative' }}>
-          <input 
-            type={showKey ? "text" : "password"}
-            className="settings-input"
-            aria-label="API Key do Google"
-            placeholder="Insira sua API Key do Google..."
-            value={!showKey && settings.apiKey ? "••••••••••••••••••••••••••••••••••••••••" : (settings.apiKey || '')}
-            onChange={(e) => {
-              const val = e.target.value;
-              const MASK = "••••••••••••••••••••••••••••••••••••••••";
-              if (showKey || !settings.apiKey) {
-                updateSettings({ apiKey: val });
-                return;
-              }
-              if (val === MASK) return;
-              if (!val.includes("•")) {
-                updateSettings({ apiKey: val });
-                return;
-              }
-              const newChars = val.replaceAll('•', '');
-              if (newChars.length === 0) {
-                updateSettings({ apiKey: '' });
-              } else if (val.startsWith(MASK)) {
-                updateSettings({ apiKey: settings.apiKey + newChars });
-              } else {
-                updateSettings({ apiKey: newChars });
-              }
-            }}
-            style={{ paddingRight: '40px' }}
-          />
-          <button 
-            type="button"
-            aria-label={showKey ? "Ocultar chave" : "Mostrar chave"}
-            onClick={() => setShowKey(!showKey)}
-            style={{
-              position: 'absolute',
-              right: '10px',
-              background: 'transparent',
-              border: 'none',
-              color: 'rgba(255,255,255,0.5)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
-      </div>
-
-      <div className="setting-row">
-        <div className="setting-info">
-          <div className="setting-title">Tavily Search API</div>
-        </div>
-        <div className="setting-control" style={{ position: 'relative' }}>
-          <input 
-            type={showTavilyKey ? "text" : "password"}
-            className="settings-input"
-            aria-label="API Key do Tavily"
-            placeholder="Insira sua API Key do Tavily..."
-            value={!showTavilyKey && settings.tavilyApiKey ? "••••••••••••••••••••••••••••••••••••••••" : (settings.tavilyApiKey || '')}
-            onChange={(e) => {
-              const val = e.target.value;
-              const MASK = "••••••••••••••••••••••••••••••••••••••••";
-              if (showTavilyKey || !settings.tavilyApiKey) {
-                updateSettings({ tavilyApiKey: val });
-                return;
-              }
-              if (val === MASK) return;
-              if (!val.includes("•")) {
-                updateSettings({ tavilyApiKey: val });
-                return;
-              }
-              const newChars = val.replaceAll('•', '');
-              if (newChars.length === 0) {
-                updateSettings({ tavilyApiKey: '' });
-              } else if (val.startsWith(MASK)) {
-                updateSettings({ tavilyApiKey: settings.tavilyApiKey + newChars });
-              } else {
-                updateSettings({ tavilyApiKey: newChars });
-              }
-            }}
-            style={{ paddingRight: '40px' }}
-          />
-          <button 
-            type="button"
-            aria-label={showTavilyKey ? "Ocultar chave" : "Mostrar chave"}
-            onClick={() => setShowTavilyKey(!showTavilyKey)}
-            style={{
-              position: 'absolute',
-              right: '10px',
-              background: 'transparent',
-              border: 'none',
-              color: 'rgba(255,255,255,0.5)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            {showTavilyKey ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
+        <SecretInput
+          label="API Key da OpenAI"
+          placeholder="Insira sua API Key da OpenAI..."
+          value={settings.openaiApiKey}
+          isVisible={showOpenAIKey}
+          onToggleVisible={() => setShowOpenAIKey(!showOpenAIKey)}
+          onChange={(value) => updateSettings({ openaiApiKey: value })}
+        />
       </div>
 
       <div className="section-header">
@@ -150,10 +123,10 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ settings, updateSettings, platf
           <select 
             className="settings-select"
             aria-label="Modelo do Minichat"
-            value={settings.minichatModel}
+            value={selectValue(settings.minichatModel, chatModels, defaultChatModel)}
             onChange={(e) => updateSettings({ minichatModel: e.target.value })}
           >
-            {MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            {chatModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
         </div>
       </div>
@@ -166,10 +139,10 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ settings, updateSettings, platf
           <select 
             className="settings-select"
             aria-label="Modelo do Gravador de Voz"
-            value={settings.sttModel}
+            value={selectValue(settings.sttModel, transcribeModels, DEFAULT_OPENAI_MODELS.sttModel)}
             onChange={(e) => updateSettings({ sttModel: e.target.value })}
           >
-            {MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            {transcribeModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
         </div>
       </div>
@@ -182,10 +155,26 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ settings, updateSettings, platf
           <select 
             className="settings-select"
             aria-label="Modelo de Transcrição Completa"
-            value={settings.fullTranscriptionModel}
+            value={selectValue(settings.fullTranscriptionModel, transcribeModels, DEFAULT_OPENAI_MODELS.fullTranscriptionModel)}
             onChange={(e) => updateSettings({ fullTranscriptionModel: e.target.value })}
           >
-            {MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            {transcribeModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="setting-row">
+        <div className="setting-info">
+          <div className="setting-title">Realtime / Susurro futuro</div>
+        </div>
+        <div className="setting-control">
+          <select
+            className="settings-select"
+            aria-label="Modelo Realtime"
+            value={selectValue(settings.realtimeModel, realtimeModels, DEFAULT_OPENAI_MODELS.realtimeModel)}
+            onChange={(e) => updateSettings({ realtimeModel: e.target.value })}
+          >
+            {realtimeModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
         </div>
       </div>
@@ -252,11 +241,11 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ settings, updateSettings, platf
           <select 
             className="settings-select"
             aria-label="Modelo do Dreaming"
-            value={settings.dreamingModel || 'gemini-2.5-flash'}
+            value={selectValue(settings.dreamingModel, chatModels, defaultChatModel)}
             onChange={(e) => updateSettings({ dreamingModel: e.target.value })}
             disabled={!(settings.dreamingEnabled ?? true)}
           >
-            {MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            {chatModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
         </div>
       </div>

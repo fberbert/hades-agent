@@ -6,6 +6,7 @@ export interface SusurroMessage {
   id: string;
   text: string;
   pendingText?: string;
+  realtimeItemId?: string;
   translatedText?: string;
   lastTranslatedText?: string;
   lastTranslatedLang?: string;

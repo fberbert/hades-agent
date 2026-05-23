@@ -13,7 +13,7 @@ Atualize docs na mesma mudança quando modificar:
 - ciclo de vida do Electron, janelas, atalhos ou tray;
 - nomes de métodos IPC, payloads ou formatos de resposta;
 - hooks do renderer ou propriedade de funcionalidades;
-- prompts Gemini, modelos, ferramentas ou comportamento de transcript;
+- prompts, modelos OpenAI ou comportamento de transcript;
 - dados armazenados, schema de settings ou arquivos em `userData`;
 - comportamento sensível a segurança;
 - comandos, build, empacotamento ou requisitos de plataforma;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { electronService } from '../services/electron';
 import { PlatformFeatureSummary, SettingsData } from '../types/electron';
 
-export type SettingsTab = 'history' | 'audio' | 'general' | 'shortcuts';
+export type SettingsTab = 'history' | 'audio' | 'general' | 'response' | 'shortcuts';
 
 export function useSettings() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('history');
@@ -63,6 +63,14 @@ export function useSettings() {
     });
   };
 
+  const updateResponseSettings = (updates: Partial<SettingsData['response']>) => {
+    setSettings((prev) => {
+      if (!prev) return null;
+      const nextResponse = { ...prev.response, ...updates };
+      return { ...prev, response: nextResponse };
+    });
+  };
+
   const saveAll = async () => {
     if (!settings) return;
     setIsSaving(true);
@@ -84,6 +92,7 @@ export function useSettings() {
     isSaving,
     updateAudioSettings,
     updateGeneralSettings,
+    updateResponseSettings,
     updateShortcutsSettings,
     saveAll
   };

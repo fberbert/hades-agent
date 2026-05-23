@@ -139,7 +139,11 @@ export const useAudioRecorder = () => {
       
       const blob = new Blob([workletCode], { type: 'application/javascript' });
       const url = URL.createObjectURL(blob);
-      await audioContext.audioWorklet.addModule(url);
+      try {
+        await audioContext.audioWorklet.addModule(url);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
       if (!isRecordingActiveRef.current) {
         console.log("[AUDIO_RECORDER] Start canceled: recording active flag is false after addModule.");
         audioContext.close();

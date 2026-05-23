@@ -15,6 +15,29 @@ const baseUrl = isPackaged
 const preloadPath = path.join(__dirname, '../../preload.js');
 const visualOptions = getWindowVisualOptions();
 
+function getTargetWorkArea() {
+  const point = screen.getCursorScreenPoint();
+  return screen.getDisplayNearestPoint(point).workArea;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function positionWindow(win, width, height, options = {}) {
+  const area = getTargetWorkArea();
+  const margin = options.margin ?? 20;
+  const x = options.x ?? area.x + Math.floor((area.width - width) / 2);
+  const y = options.y ?? area.y + Math.floor((area.height - height) / 2);
+  const maxX = area.x + Math.max(margin, area.width - width - margin);
+  const maxY = area.y + Math.max(margin, area.height - height - margin);
+
+  win.setPosition(
+    clamp(x, area.x + margin, maxX),
+    clamp(y, area.y + margin, maxY)
+  );
+}
+
 const windowConfigs = {
   command: {
     width: 730,
@@ -37,8 +60,8 @@ const windowConfigs = {
     },
     onInit: (win) => {
       if (process.platform === 'win32') win.setBackgroundMaterial('mica');
-      const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
-      win.setPosition(Math.floor((screenWidth - 730) / 2), 40);
+      const area = getTargetWorkArea();
+      positionWindow(win, 730, 480, { y: area.y + 40 });
     }
   },
   chat: {
@@ -63,8 +86,8 @@ const windowConfigs = {
     },
     onInit: (win) => {
       if (process.platform === 'win32') win.setBackgroundMaterial('mica');
-      const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
-      win.setPosition(Math.floor((screenWidth - 480) / 2), 180);
+      const area = getTargetWorkArea();
+      positionWindow(win, 480, 490, { y: area.y + 180 });
     }
   },
   voice: {
@@ -86,6 +109,7 @@ const windowConfigs = {
     },
     onInit: (win) => {
       if (process.platform === 'win32') win.setBackgroundMaterial('mica');
+      positionWindow(win, 480, 420);
     }
   },
   susurroSetup: {
@@ -107,6 +131,7 @@ const windowConfigs = {
     },
     onInit: (win) => {
       if (process.platform === 'win32') win.setBackgroundMaterial('mica');
+      positionWindow(win, 440, 520);
     }
   },
   susurro: {
@@ -131,6 +156,7 @@ const windowConfigs = {
     },
     onInit: (win) => {
       if (process.platform === 'win32') win.setBackgroundMaterial('mica');
+      positionWindow(win, 520, 680);
     }
   },
   suggestions: {
@@ -152,8 +178,8 @@ const windowConfigs = {
       sandbox: true,
     },
     onInit: (win) => {
-      const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
-      win.setPosition(Math.floor((screenWidth - 600) / 2), 20);
+      const area = getTargetWorkArea();
+      positionWindow(win, 600, 60, { y: area.y + 20 });
     }
   },
   notification: {
@@ -174,8 +200,8 @@ const windowConfigs = {
       sandbox: true
     },
     onInit: (win) => {
-      const { width: screenWidth } = screen.getPrimaryDisplay().workArea;
-      win.setPosition(Math.floor(screenWidth / 2 - 200), 50);
+      const area = getTargetWorkArea();
+      positionWindow(win, 400, 100, { y: area.y + 50 });
     }
   },
   splash: {
@@ -197,11 +223,7 @@ const windowConfigs = {
       sandbox: true,
     },
     onInit: (win) => {
-      const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
-      win.setPosition(
-        Math.floor((sw - 900) / 2),
-        Math.floor((sh - 180) / 2)
-      );
+      positionWindow(win, 900, 180);
       win.setAlwaysOnTop(true, 'screen-saver');
       win.once('ready-to-show', () => {
         console.log('[WINDOW_CONFIGS] Splash window ready-to-show, showing now');
@@ -229,11 +251,7 @@ const windowConfigs = {
     },
     onInit: (win) => {
       if (process.platform === 'win32') win.setBackgroundMaterial('mica');
-      const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
-      win.setPosition(
-        Math.floor((sw - 820) / 2),
-        Math.floor((sh - 600) / 2)
-      );
+      positionWindow(win, 820, 600);
     }
   }
 };

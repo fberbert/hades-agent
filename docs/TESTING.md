@@ -51,12 +51,12 @@ Ele inicia Vite e Electron com `HADES_LINUX_RUNTIME_SMOKE=1`, abre CommandBar, M
 ### 2026-05-21 - Ubuntu GNOME X11
 
 - Build: passou via `npm run build`.
-- Testes: passou, 6 arquivos e 21 testes via `npm test`.
+- Testes: passou, 20 arquivos e 72 testes via `npm test`.
 - Smoke: passou via `npm run smoke:linux`.
 - Runtime smoke: passou via `npm run smoke:linux:runtime`; Vite iniciou em `3000`, Electron iniciou com `--no-sandbox`, atalhos globais foram registrados, e CommandBar, MiniChat, Settings e Susurro abriram como janelas visíveis/focadas com URLs esperadas.
 - Pacote Linux: passou via `npm run dist:linux`; gerou `release/Hades-Agent-1.0.0-x86_64.AppImage` e `release/Hades-Agent-1.0.0-amd64.deb`.
 - Stealth/content protection: degradado como esperado; Linux registrou `platform-unsupported` em vez de tratar comportamento sem suporte como sucesso.
-- Chat real com modelo, captura de tela real e captura de áudio real: não concluídos nesta execução automatizada porque exigem chaves de API e prompts de permissão do desktop.
+- Chat real com modelo, Susurro realtime com microfone, captura de tela real e captura de áudio real: não concluídos nesta execução automatizada porque exigem chaves de API e prompts de permissão do desktop.
 
 Use a matriz abaixo para mudanças que não podem ser cobertas apenas por testes unitários.
 
@@ -65,6 +65,7 @@ Use a matriz abaixo para mudanças que não podem ser cobertas apenas por testes
 ### Command Bar
 
 - Abra com `Alt+D`.
+- Abra o MiniChat direto com `Alt+C` e confirme que ele aparece sem enviar mensagem.
 - Digite uma mensagem.
 - Anexe ou cole uma imagem se comportamento de imagem mudou.
 - Envie ao MiniChat.
@@ -74,25 +75,22 @@ Use a matriz abaixo para mudanças que não podem ser cobertas apenas por testes
 
 - Receba mensagem da Command Bar.
 - Obtenha resposta de modelo.
+- Confirme que a resposta passa por `assistant-generate-response` e que web search usa OpenAI Responses.
 - Verifique mudança no contador de tokens.
 - Limpe ou encerre a sessão se persistência de chat mudou.
 - Teste pin/minimize se estado de janela mudou.
 
-### Ferramentas
-
-- Teste o caminho específico da ferramenta alterada.
-- Verifique se a declaração em `src/constants/tools.ts` corresponde ao executor em `useGemini.ts`.
-- Confirme que erros aparecem e não são engolidos em silêncio.
-
 ### Susurro
 
 - Abra com `Alt+B`.
-- Inicie transcrição.
-- Confirme que status Gemini Live chega a ready.
-- Confirme que chunks de áudio produzem deltas de transcrição.
+- Pressione espaço para iniciar a transcrição.
+- No Linux, fale no microfone; o modo esperado é microfone, não áudio do sistema.
+- Observe status `ready`, deltas parciais e texto final vindos do OpenAI Realtime.
 - Teste tradução se comportamento de tradução mudou.
-- Pare transcrição e confirme encerramento da sessão.
-- No Linux, confirme que captura de áudio do sistema sem suporte reporta erro claro e mantém o app responsivo.
+- Pressione espaço para parar e confirme encerramento da sessão.
+- Se a mudança tocar áudio do sistema no Linux, confirme que a ausência de backend PulseAudio/PipeWire reporta erro claro e mantém o app responsivo.
+
+Validação humana real do Susurro realtime com microfone ainda não foi registrada como concluída nesta base. Não marque sucesso manual sem executar o roteiro acima com OpenAI API key válida, permissão de microfone e fala audível.
 
 ### Settings
 
@@ -136,7 +134,7 @@ Reporte validação assim:
 
 - `npm run build` passou.
 - `npm test` falhou porque uma dependência do ambiente de teste não estava disponível.
-- Validação manual do Susurro não foi executada porque este ambiente é Linux e o comportamento alvo é captura desktop do Windows.
+- Validação manual do Susurro Linux por microfone não foi executada; ainda falta teste humano com `Alt+B`, espaço, fala no microfone e parada com espaço.
 
 ## Controle de Saída
 

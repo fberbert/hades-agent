@@ -17,7 +17,7 @@ export interface HadesContext {
 
 /**
  * Builds a rich HadesContext object from the current environment.
- * Called in useGemini.ts before each inference.
+ * Called by the MiniChat inference hook before each OpenAI request.
  */
 export const buildHadesContext = (activeSkills: string = 'Nenhuma skill carregada ainda.', userMemory: string = 'Nenhuma memória consolidada ainda.'): HadesContext => {
   const now = new Date();

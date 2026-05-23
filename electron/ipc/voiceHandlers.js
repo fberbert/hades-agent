@@ -1,5 +1,6 @@
 const { ipcMain } = require('electron');
 const aiService = require('../services/aiService');
+const { synthesizeSpeechDataUrl } = require('../services/openaiSpeechService');
 const logger = require('../services/logger');
 
 /**
@@ -14,7 +15,7 @@ function registerVoiceHandlers() {
         return { success: false, error: 'No audio data received' };
       }
 
-      const transcription = await aiService.transcribeAudio(base64Audio);
+      const transcription = await aiService.transcribeAudio(base64Audio, 'audio/wav');
       
       if (transcription) {
         return { success: true, data: transcription };
@@ -23,6 +24,22 @@ function registerVoiceHandlers() {
       }
     } catch (error) {
       logger.error('IPC', 'transcribe-audio error', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('synthesize-speech', async (event, text, options = {}) => {
+    try {
+      logger.info('IPC', `Received synthesize-speech request chars=${String(text || '').length}`);
+
+      const speech = await synthesizeSpeechDataUrl(text, options);
+      logger.info(
+        'IPC',
+        `synthesize-speech success model=${speech.model} voice=${speech.voice} format=${speech.format} dataUrlChars=${speech.audioDataUrl.length}`
+      );
+      return { success: true, data: speech };
+    } catch (error) {
+      logger.error('IPC', 'synthesize-speech error', error);
       return { success: false, error: error.message };
     }
   });

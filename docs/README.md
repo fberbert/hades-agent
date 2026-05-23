@@ -6,7 +6,7 @@ Este diretório é a base de conhecimento durável para agentes e mantenedores. 
 
 - Novo no repositório: leia `PROJECT_OVERVIEW.md` e depois `ARCHITECTURE.md`.
 - Alterando janelas ou ciclo de vida do Electron: leia `ARCHITECTURE.md`, `ELECTRON_IPC.md` e `SECURITY.md`.
-- Alterando chat, prompts, ferramentas, Gemini, Susurro, tradução ou memória: leia `AI_AND_TOOLS.md`.
+- Alterando chat, prompts, OpenAI, Susurro, tradução ou memória: leia `AI_AND_TOOLS.md`.
 - Alterando estado persistido ou configurações: leia `DATA_AND_STORAGE.md`.
 - Executando, buildando, empacotando ou depurando: leia `OPERATIONS.md`.
 - Escrevendo testes ou verificando um patch: leia `TESTING.md`.
@@ -18,7 +18,7 @@ Este diretório é a base de conhecimento durável para agentes e mantenedores. 
 - `ARCHITECTURE.md` - processo principal, renderer, ciclo de vida de janelas, IPC, services e fluxo de dados.
 - `FRONTEND.md` - organização do renderer React, componentes, hooks, estilos e estado de UI.
 - `ELECTRON_IPC.md` - API do preload, arquivos de handlers, grupos de canais e procedimento de mudança.
-- `AI_AND_TOOLS.md` - prompts Gemini, loop do MiniChat, ferramentas, transcrição Susurro, tradução, skills, tarefas e memória Dream.
+- `AI_AND_TOOLS.md` - provider OpenAI-only, prompts, MiniChat, transcrição, tradução, skills, tarefas e memória Dream.
 - `DATA_AND_STORAGE.md` - armazenamento em `userData`, schema de settings, históricos, sessões, personas, tokens e tarefas.
 - `OPERATIONS.md` - instalação, desenvolvimento, build, empacotamento, logs, ressalvas de plataforma e troubleshooting.
 - `SECURITY.md` - sandbox, context isolation, content protection, chaves, limites de filesystem, CSP e captura.

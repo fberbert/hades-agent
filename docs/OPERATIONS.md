@@ -139,6 +139,17 @@ Logs de ciclo de vida de janela cobrem:
 
 ## Troubleshooting Comum
 
+### OpenAI Não Responde no MiniChat
+
+Verifique:
+
+- `OpenAI API Key` preenchida;
+- modelo do MiniChat em `gpt-5-nano` ou `gpt-5-mini`;
+- handler `assistant-generate-response`;
+- logs de `electron/services/openaiResponsesService.js`.
+
+Para testar sem vazar segredos, use logs limitados e não imprima settings descriptografadas.
+
 ### Porta do Vite Ocupada
 
 Vite usa porta estrita `3000`. Pare o processo ocupante ou altere `vite.config.ts` deliberadamente.
@@ -174,22 +185,35 @@ Não pré-crie janelas transparentes ocultas sem retestar content protection.
 
 Verifique:
 
-- chave Gemini nas settings;
 - handler `susurro-start-live`;
-- `geminiLiveService.start`;
-- `getSystemAudioSourceId`;
-- permissões de captura de mídia do navegador;
+- sessão OpenAI Realtime Transcription em `electron/services/openaiRealtimeTranscriptionService.js`;
+- OpenAI API Key nas settings/env, sem imprimir o valor em logs;
+- modelo `general.fullTranscriptionModel || general.sttModel`, com default `gpt-4o-mini-transcribe`;
+- permissão de microfone do sistema/navegador;
+- log do renderer `[TRANSCRIPTION] Starting capture mode: microphone` no Linux;
+- logs de chunks como `[AUDIO_RECORDER] Sending chunk seq: ...`;
+- abertura/erro do WebSocket OpenAI Realtime no main process;
 - sample rate e silence threshold em `useAudioRecorder`.
 
-No Linux, áudio do sistema é desabilitado por capacidade até existir backend específico validado.
+No Linux, o fluxo atual do Susurro usa microfone por padrão. Áudio do sistema permanece fase separada até existir backend PulseAudio/PipeWire implementado e testado; não trate ausência de áudio do sistema Linux como regressão do realtime por microfone.
+
+### Voice Recorder Não Transcreve
+
+Verifique:
+
+- OpenAI API Key;
+- modelo `gpt-4o-mini-transcribe`;
+- permissões de microfone do sistema;
+- se o handler `transcribe-audio` está recebendo WAV/base64;
+- `electron/services/openaiTranscriptionService.js`.
 
 ### Busca Não Funciona
 
 Verifique:
 
-- chave Tavily nas settings;
-- executor `search_web` em `useGemini`;
-- `electron/services/searchService.js`;
+- OpenAI API Key para busca por `web_search_preview`;
+- handler `assistant-generate-response`;
+- `electron/services/openaiResponsesService.js`;
 - erros de rede nos logs.
 
 ## Regra de Comando Seguro

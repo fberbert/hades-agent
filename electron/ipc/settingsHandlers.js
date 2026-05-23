@@ -42,13 +42,13 @@ function applyStealthMode(enabled) {
 }
 
 /**
- * Updates the Gemini API key at runtime so services pick it up immediately.
+ * Updates the OpenAI API key at runtime so services pick it up immediately.
  * @param {string} key
  */
-function applyApiKey(key) {
+function applyOpenAIKey(key) {
   if (typeof key === 'string' && key.trim()) {
-    process.env.VITE_GEMINI_API_KEY = key.trim();
-    logger.info('SETTINGS', 'API key updated at runtime.');
+    process.env.OPENAI_API_KEY = key.trim();
+    logger.info('SETTINGS', 'OpenAI API key updated at runtime.');
   }
 }
 
@@ -84,7 +84,7 @@ function registerSettingsHandlers() {
       }
 
       applyStealthMode(newStealth);
-      applyApiKey(settings.general.apiKey);
+      applyOpenAIKey(settings.general.openaiApiKey);
       
       // Update global shortcuts dynamically on save
       registerGlobalShortcuts();
@@ -93,7 +93,7 @@ function registerSettingsHandlers() {
       const allWindows = BrowserWindow.getAllWindows();
       allWindows.forEach(win => {
         if (!win.isDestroyed()) {
-          win.webContents.send('settings-updated', settings);
+          win.webContents.send('settings-updated', jsonStore.getSettings());
         }
       });
       

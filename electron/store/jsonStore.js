@@ -3,6 +3,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
 const os = require('node:os');
+const { normalizeProviderSettings } = require('../services/providerRouter');
 
 /**
  * JsonStore provides a centralized persistence layer for the application.
@@ -34,17 +35,22 @@ class JsonStore {
         systemAudioVolume: 100
       },
       general: {
-        apiKey: '',
-        tavilyApiKey: '',
-        minichatModel: 'gemini-2.5-flash',
-        sttModel: 'gemini-2.5-flash',
-        fullTranscriptionModel: 'gemini-2.5-flash',
+        openaiApiKey: '',
+        minichatModel: 'gpt-5-nano',
+        sttModel: 'gpt-4o-mini-transcribe',
+        fullTranscriptionModel: 'gpt-4o-mini-transcribe',
+        realtimeModel: 'gpt-realtime-mini',
         stealthMode: false,
         dreamingEnabled: true,
-        dreamingModel: 'gemini-2.5-flash'
+        dreamingModel: 'gpt-5-nano'
+      },
+      response: {
+        audioForVoiceInput: true,
+        alwaysAudio: false
       },
       shortcuts: {
         toggleCommand: 'Alt+D',
+        toggleChat: 'Alt+C',
         toggleSettings: 'Alt+S',
         toggleSusurro: 'Alt+B',
         toggleVoice: 'Alt+V'
@@ -162,15 +168,15 @@ class JsonStore {
     this.cache.totalTokens = this.safeLoad(this.paths.tokens, { total: 0 }).total || 0;
     // Deep merge so new keys from defaultSettings survive missing fields in saved file
     const saved = this.safeLoadSettings();
-    this.cache.settings = {
+    this.cache.settings = normalizeProviderSettings({
       audio: { ...this._defaultSettings.audio, ...(saved.audio || {}) },
       general: { ...this._defaultSettings.general, ...(saved.general || {}) },
+      response: { ...this._defaultSettings.response, ...(saved.response || {}) },
       shortcuts: { ...this._defaultSettings.shortcuts, ...(saved.shortcuts || {}) }
-    };
+    });
 
-    // Populate env variables from settings for backward compatibility & frontend access
-    process.env.VITE_GEMINI_API_KEY = this.cache.settings.general.apiKey || '';
-    process.env.VITE_TAVILY_API_KEY = this.cache.settings.general.tavilyApiKey || '';
+    // Populate env variables from settings for services that need runtime access.
+    process.env.OPENAI_API_KEY = this.cache.settings.general.openaiApiKey || '';
   }
 
   /**
@@ -240,10 +246,9 @@ class JsonStore {
 
   getSettings() { return this.cache.settings; }
   saveSettings(settings) {
-    this.cache.settings = settings;
-    this.safeSaveSettings(settings);
-    process.env.VITE_GEMINI_API_KEY = settings.general.apiKey || '';
-    process.env.VITE_TAVILY_API_KEY = settings.general.tavilyApiKey || '';
+    this.cache.settings = normalizeProviderSettings(settings);
+    this.safeSaveSettings(this.cache.settings);
+    process.env.OPENAI_API_KEY = this.cache.settings.general.openaiApiKey || '';
   }
 }
 

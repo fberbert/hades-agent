@@ -7,6 +7,25 @@ import { useTranscription } from './useTranscription';
 import { useTranslation } from './useTranslation';
 import { electronService } from '../services/electron';
 
+function shouldIgnoreSpaceShortcut(event: KeyboardEvent) {
+  if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return true;
+
+  const activeElement = document.activeElement;
+  if (!(activeElement instanceof HTMLElement)) return false;
+  if (activeElement === document.body || activeElement === document.documentElement) return false;
+  if (activeElement.isContentEditable) return true;
+
+  const tagName = activeElement.tagName.toLowerCase();
+  if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') return true;
+  if (tagName === 'button') return true;
+  if (tagName === 'a' && activeElement.hasAttribute('href')) return true;
+
+  const role = activeElement.getAttribute('role');
+  if (role === 'button' || role === 'menuitem' || role === 'textbox') return true;
+
+  return activeElement.hasAttribute('tabindex');
+}
+
 /**
  * Orchestrator hook for Susurro logic.
  * Manages state for messages, personas, translation, and UI controls.
@@ -43,7 +62,13 @@ export const useSusurro = () => {
     deletePersona
   } = usePersonas();
 
-  const { isTranscribing, isConnecting, startTranscriptionHades, stopTranscriptionHades } = useTranscription(
+  const {
+    isTranscribing,
+    isConnecting,
+    transcriptionError,
+    startTranscriptionHades,
+    stopTranscriptionHades
+  } = useTranscription(
     selectedPersona,
     isSuggestionsEnabled,
     isGlobalTranslationEnabled,
@@ -74,6 +99,8 @@ export const useSusurro = () => {
         electronService.closeWindow();
       }
       if (e.key === ' ') {
+        if (shouldIgnoreSpaceShortcut(e)) return;
+
         e.preventDefault();
         e.stopPropagation();
         (document.activeElement as HTMLElement)?.blur();
@@ -175,7 +202,7 @@ export const useSusurro = () => {
     handleScroll,
 
     // Transcription
-    isTranscribing, isConnecting, startTranscriptionHades, stopTranscriptionHades,
+    isTranscribing, isConnecting, transcriptionError, startTranscriptionHades, stopTranscriptionHades,
 
     // Handlers
     handleToggleGlobalTranslation,

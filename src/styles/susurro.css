@@ -19,6 +19,20 @@
   user-select: none !important;
 }
 
+.susurro-error {
+  flex-shrink: 0;
+  margin: 8px 12px 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 8px;
+  background: rgba(127, 29, 29, 0.28);
+  color: #fecaca;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  -webkit-app-region: no-drag;
+}
+
 /* ─── Scrollable message area ────────────────────────────────────────── */
 .susurro-content {
   flex: 1;

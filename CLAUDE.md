@@ -55,6 +55,8 @@ find . -maxdepth 3 -type f 2>&1 | head -c 4000
 - `electron/ipc/*Handlers.js` implementa o comportamento backend para métodos da ponte.
 - `electron/store/jsonStore.js` é dono dos dados persistidos do usuário em `app.getPath('userData')`.
 - Chaves de API são configurações do usuário e também podem vir de `.env`; nunca imprima valores reais.
+- OpenAI é o único provider de IA. MiniChat e Dreaming usam `gpt-5-nano` por padrão; STT usa `gpt-4o-mini-transcribe`; realtime futuro usa `gpt-realtime-mini`.
+- A OpenAI API key deve permanecer no main process. O renderer deve acessar OpenAI por IPC, não por chamada direta com segredo no frontend.
 - Janelas são criadas sob demanda e configuradas em `electron/windows/windowConfigs.js`.
 - `setContentProtection` e atalhos globais são centrais para o comportamento desktop no Windows; teste com cuidado ao mudar ciclo de vida das janelas.
 - Suporte Linux é baseado em capacidades. Não prometa stealth/content-protection ou system audio no Linux sem validação específica da plataforma.

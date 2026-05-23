@@ -22,7 +22,10 @@ Este arquivo é o mapa compacto para agentes de programação. Mantenha conhecim
 - Fonte de verdade das janelas: `electron/windows/windowConfigs.js`.
 - Fonte de verdade da persistência local: `electron/store/jsonStore.js`.
 - Prompts de IA: `prompts/*.md` e `src/constants/prompts.ts`.
-- Declarações de ferramentas Gemini: `src/constants/tools.ts`; loop de execução: `src/hooks/useGemini.ts`.
+- Provider/modelos do main process: `electron/services/modelCatalog.js` e `electron/services/providerRouter.js`.
+- OpenAI Responses API: `electron/services/openaiResponsesService.js` e `electron/ipc/aiHandlers.js`.
+- Transcrição OpenAI: `electron/services/openaiTranscriptionService.js`.
+- Hook de inferência do MiniChat: `src/hooks/useAssistantInference.ts`.
 
 ## Comandos
 
@@ -70,15 +73,17 @@ Estas regras vêm da inspeção do repositório e dos dois artigos solicitados: 
 - Se o contexto ficar longo ou o estado ficar incerto, resuma o estado atual antes de continuar.
 - Não alegue validação que não foi executada. Diga exatamente quais comandos rodaram e quais foram pulados.
 - Proteja segredos. Nunca imprima chaves de API nem valores persistidos de configuração.
+- OpenAI é o único provider de IA do projeto. Use os modelos baratos configurados: `gpt-5-nano` para MiniChat/Dreaming, `gpt-4o-mini-transcribe` para STT e `gpt-realtime-mini` para realtime futuro. `gpt-5-mini` é a opção de qualidade barata.
 
 ## Guardrails de Arquitetura
 
 - Código do renderer deve usar `window.electron` por meio de `src/services/electron.ts`; não importe APIs Node ou Electron diretamente em componentes React.
 - Adicione IPC em todos os lugares necessários ao mesmo tempo: `preload.js`, `src/types/electron.ts`, `src/services/electron.ts` e o handler correspondente em `electron/ipc/*Handlers.js`.
+- Chaves OpenAI devem ficar no processo principal Electron. O renderer deve chamar OpenAI por IPC, nunca por `fetch` direto com chave no frontend.
 - Mantenha filesystem privilegiado, captura de desktop, atalhos globais e comportamento de janelas do SO no processo principal do Electron.
 - Mantenha dimensões e flags de segurança das janelas em `electron/windows/windowConfigs.js`.
 - Mantenha estado persistido em `electron/store/jsonStore.js`; não adicione JSONs soltos sem atualizar a documentação de armazenamento.
-- Mantenha declarações de ferramentas para Gemini em `src/constants/tools.ts` alinhadas com o executor real em `src/hooks/useGemini.ts`.
+- Mantenha o caminho OpenAI do MiniChat em `assistant-generate-response` e `openaiResponsesService.js`.
 - Mantenha prompts visíveis ao usuário em `prompts/` e montagem de prompts em `src/constants/prompts.ts`.
 - Mantenha o suporte Linux baseado em capacidades: não prometa stealth/content-protection ou system audio sem validação específica da plataforma.
 

@@ -7,13 +7,27 @@ import { SusurroMessage } from '../types';
 export const updateMessageWithDeltas = (
   messages: SusurroMessage[], 
   index: number, 
-  deltas: { text: string, isFinal: boolean }[]
+  deltas: { text: string, isFinal: boolean, itemId?: string, replaceText?: boolean }[]
 ): SusurroMessage[] => {
   const newMessages = [...messages];
   let msg = { ...newMessages[index] };
 
   deltas.forEach(delta => {
-    // The Gemini Live API sends text segments that include their own leading/trailing spaces.
+    if (delta.itemId) {
+      msg.realtimeItemId = delta.itemId;
+    }
+
+    if (delta.isFinal && delta.replaceText) {
+      msg = {
+        ...msg,
+        text: delta.text,
+        pendingText: "",
+        updateCount: msg.updateCount + 1
+      };
+      return;
+    }
+
+    // Realtime transcription segments may include their own leading/trailing spaces.
     // We must concatenate them directly without adding extra spaces or aggressive trimming.
     const currentFullText = (msg.text || "") + (msg.pendingText || "");
     const updatedText = currentFullText + delta.text;

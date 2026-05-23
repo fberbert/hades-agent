@@ -4,10 +4,13 @@
 
 Hades Agent tem vários caminhos relacionados a IA:
 
-- inferência do MiniChat por `src/hooks/useGemini.ts`;
-- transcrição Gemini Live por `electron/services/geminiLiveService.js`;
+- inferência do MiniChat por `src/hooks/useAssistantInference.ts` via IPC;
+- cliente e Responses API em `electron/services/openaiClient.js` e `electron/services/openaiResponsesService.js`;
+- transcrição OpenAI em `electron/services/openaiTranscriptionService.js`;
+- síntese de fala OpenAI em `electron/services/openaiSpeechService.js`;
+- normalização de modelos/settings antigas por `electron/services/providerRouter.js`;
 - helpers de sugestão, título e transcrição de áudio por `electron/services/aiService.js`;
-- busca web por `electron/services/searchService.js`;
+- busca web principal por OpenAI `web_search_preview`;
 - tradução por `electron/services/translationService.js`;
 - skills locais por `electron/services/skillService.js`;
 - consolidação de memória Dream por `electron/services/dreamService.js`.
@@ -37,52 +40,66 @@ A montagem dos prompts do renderer fica em `src/constants/prompts.ts`.
 
 ## Configuração de Modelos
 
-Labels e defaults de modelos ficam em `src/constants/models.ts`.
+OpenAI é o único provider de IA do projeto.
+
+Camadas de configuração:
+
+- `electron/services/modelCatalog.js` - catálogo e defaults do main process.
+- `electron/services/providerRouter.js` - normalização de settings antigas e remoção de modelos/chaves legadas.
+- `src/constants/models.ts` - labels, filtros e defaults do renderer.
+- `electron/store/jsonStore.js` - persistência criptografada de settings.
 
 Default atual:
 
 ```ts
-export const DEFAULT_MODEL = 'gemini-2.5-flash';
+export const DEFAULT_MODEL = 'gpt-5-nano';
 ```
 
-Settings persistidas por `jsonStore.js` também incluem:
+Modelos baratos padrão:
 
+- MiniChat/respostas: `gpt-5-nano`
+- Opção de maior qualidade: `gpt-5-mini`
+- Voice/STT: `gpt-4o-mini-transcribe`
+- Voice/TTS: `gpt-4o-mini-tts`
+- Susurro realtime transcription: `gpt-4o-mini-transcribe`
+- Realtime conversational futuro: `gpt-realtime-mini`
+- Dreaming: `gpt-5-nano`
+
+Settings persistidas por `jsonStore.js` incluem:
+
+- `general.openaiApiKey`
 - `general.minichatModel`
 - `general.sttModel`
 - `general.fullTranscriptionModel`
+- `general.realtimeModel`
 - `general.dreamingModel`
+- `response.audioForVoiceInput`
+- `response.alwaysAudio`
 
 Ao alterar IDs de modelos, verifique tanto constants quanto comportamento da UI de settings.
 
+## Modos de Resposta
+
+O MiniChat sempre adiciona a resposta textual ao histórico. A aba `Resposta` em Settings controla apenas se a resposta também será reproduzida por TTS OpenAI:
+
+- `response.audioForVoiceInput`: reproduz áudio quando a pergunta veio do `Alt+V`.
+- `response.alwaysAudio`: reproduz áudio para qualquer resposta, inclusive perguntas digitadas.
+
+`response.alwaysAudio` tem precedência sobre `response.audioForVoiceInput`. Se ambos estiverem desativados, o MiniChat continua respondendo em texto.
+
 ## Loop de Ferramentas do MiniChat
 
-O fluxo do MiniChat é orquestrado por `useGemini`.
+O fluxo do MiniChat é orquestrado por `useAssistantInference`.
 
 Arquivos importantes:
 
-- `src/constants/tools.ts` - declarações enviadas ao Gemini.
-- `src/hooks/useGemini.ts` - executa function calls retornadas.
+- `src/hooks/useAssistantInference.ts` - monta contexto e chama o IPC OpenAI.
+- `electron/ipc/aiHandlers.js` - handler `assistant-generate-response`.
+- `electron/services/openaiResponsesService.js` - chamada OpenAI Responses API.
 - `preload.js` - ponte para ações privilegiadas.
 - `electron/ipc/toolHandlers.js` - handlers backend de ferramentas.
 
-Ferramentas declaradas incluem:
-
-- `search_web`
-- `read_url`
-- `complete_task`
-- `send_message`
-- `notify`
-- `show_chat`
-- `get_open_windows`
-- `capture_screen`
-- `schedule_task`
-- `list_tasks`
-- `delete_task`
-- `save_skill`
-- `list_skills`
-- `load_skill`
-
-Guardrail: declarações de ferramentas e executor devem permanecer alinhados. Não adicione declaração sem implementar execução; não deixe branches do executor sem documentação.
+MiniChat envia prompt/histórico por IPC e usa `web_search_preview` quando o turno indica necessidade de web. A OpenAI API key fica no main process.
 
 ## Regra de Lógica Determinística
 
@@ -109,16 +126,40 @@ Use chamadas de modelo para:
 
 ## Busca
 
-`electron/services/searchService.js` lida com busca Tavily. Chaves de API vêm de settings ou variáveis de ambiente populadas por `jsonStore.js`.
+A busca do MiniChat usa `web_search_preview` pela Responses API. Ela depende apenas da OpenAI API key.
 
 Não imprima valores reais de chaves em logs ou docs.
 
+## Voice e Transcrição Curta
+
+O fluxo `Alt+V`/Voice Recorder grava áudio, gera WAV/base64 e chama `transcribe-audio` por IPC.
+
+- `electron/services/aiService.js` delega para `openaiTranscriptionService.js`;
+- o modelo padrão é `gpt-4o-mini-transcribe`;
+- o MIME esperado é `audio/wav`.
+
+Ao finalizar a gravação, `useVoiceRecorder` transcreve o áudio e envia automaticamente a mensagem ao MiniChat com `{ source: 'voice' }`; não há etapa extra de confirmação por espaço após a transcrição. O MiniChat mantém a janela aberta, gera a resposta textual normalmente e, conforme `settings.response`, chama `synthesize-speech` para gerar MP3 com `gpt-4o-mini-tts` e reproduzir a resposta no renderer.
+
+O TTS fica no main process para manter a OpenAI API key fora do renderer. O renderer recebe apenas um `data:audio/mpeg;base64,...` pronto para reprodução.
+
 ## Transcrição Ao Vivo Susurro
 
-Main process:
+Susurro usa OpenAI Realtime Transcription no main process. `startSusurroLive(persona)` chama o handler `susurro-start-live`; `electron/ipc/susurroHandlers.js` mantém uma sessão ativa, lê a OpenAI API key via settings/env, inicia `OpenAIRealtimeTranscriptionSession` com idioma `pt` e encaminha chunks PCM16/base64 a 24 kHz recebidos por `susurro-send-chunk`.
 
-- `electron/services/geminiLiveService.js`
-- `electron/ipc/susurroHandlers.js`
+Eventos do service são enviados ao renderer por:
+
+- `susurro-live-status`
+- `susurro-live-delta`
+
+O modelo vem de `general.fullTranscriptionModel || general.sttModel`, com o default barato `gpt-4o-mini-transcribe` definido no service realtime.
+
+Fluxo atual:
+
+1. `useTranscription` chama `startSusurroLive(persona)` antes de iniciar a captura local.
+2. No Linux, `useAudioRecorder` captura microfone por `navigator.mediaDevices.getUserMedia({ audio: true })`.
+3. O renderer converte amostras para PCM16/base64 em 24 kHz e envia cada chunk por `susurro-send-chunk`.
+4. O main process repassa os chunks para o WebSocket OpenAI Realtime.
+5. Deltas parciais/finais e status normalizados voltam ao renderer por `susurro-live-delta` e `susurro-live-status`.
 
 Renderer:
 
@@ -127,14 +168,10 @@ Renderer:
 - `src/hooks/useAudioRecorder.ts`
 - `src/components/Susurro.tsx`
 
-Fluxo:
+Main process:
 
-1. Renderer chama `startSusurroLive`.
-2. Main process abre uma sessão Gemini Live.
-3. Renderer captura áudio suportado e envia chunks PCM em base64.
-4. Main process encaminha chunks como `audio/pcm;rate=16000`.
-5. Gemini Live retorna deltas de transcrição.
-6. Renderer mescla deltas em mensagens do Susurro.
+- `electron/ipc/susurroHandlers.js`
+- `electron/services/openaiRealtimeTranscriptionService.js`
 
 Constantes importantes:
 
@@ -169,6 +206,15 @@ Skills são gerenciadas por `electron/services/skillService.js` e expostas por `
 
 O app pode salvar, listar e carregar skills como conhecimento procedural local. Ao alterar formato ou armazenamento de skills, atualize `DATA_AND_STORAGE.md`.
 
+## Sugestões, Títulos e Dreaming
+
+`aiService.js` também gera:
+
+- sugestões do Susurro;
+- títulos curtos de sessão.
+
+Esses caminhos usam OpenAI Responses API, com `gpt-5-nano` por padrão ou o modelo configurado em `minichatModel`.
+
 ## Consolidação de Memória Dream
 
 `main.js` agenda `dreamService.runDreamCycle()`:
@@ -176,7 +222,9 @@ O app pode salvar, listar e carregar skills como conhecimento procedural local. 
 - uma vez 10 segundos após o app iniciar;
 - depois a cada 24 horas.
 
-`dreamService.js` usa logs de sessão e instruções de prompt para construir memória consolidada. Ele é controlado por:
+`dreamService.js` usa logs de sessão e instruções de prompt para construir memória consolidada com Responses API e `dreamingModel || gpt-5-nano`.
+
+Ele é controlado por:
 
 - `general.dreamingEnabled`
 - `general.dreamingModel`

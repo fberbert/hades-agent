@@ -4,6 +4,17 @@ import { useAudioRecorder } from './useAudioRecorder';
 import { updateMessageWithDeltas, calculateDeltaLength } from '../utils/transcription';
 import { electronService } from '../services/electron';
 
+function shouldUseSystemAudioForSusurro() {
+  return navigator.platform.toLowerCase().includes('win');
+}
+
+type TranscriptionDelta = {
+  text: string;
+  isFinal: boolean;
+  itemId?: string;
+  replaceText?: boolean;
+};
+
 /**
  * Hook to manage high-level transcription logic, delta processing, and message state.
  * Orchestrates the audio recording lifecycle and coordinates with Electron IPC for STT.
@@ -18,8 +29,9 @@ export const useTranscription = (
 ) => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
   const currentTurnIdRef = useRef<string | null>(null);
-  const pendingDeltaRef = useRef<{ text: string, isFinal: boolean }[]>([]);
+  const pendingDeltaRef = useRef<TranscriptionDelta[]>([]);
   const deltaTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { startRecording, stopRecording, gainNode } = useAudioRecorder();
@@ -33,7 +45,7 @@ export const useTranscription = (
   /**
    * Updates token counts and generates suggestions based on new deltas.
    */
-  const updateExternalState = useCallback((deltas: { text: string, isFinal: boolean }[]) => {
+  const updateExternalState = useCallback((deltas: TranscriptionDelta[]) => {
     const totalChars = calculateDeltaLength(deltas);
 
     electronService.updateTokens(Math.ceil(totalChars / 4)).then((total: number) => {
@@ -52,12 +64,16 @@ export const useTranscription = (
   /**
    * Processes incoming transcription deltas and updates message state.
    */
-  const processDeltas = useCallback((deltas: { text: string, isFinal: boolean }[]) => {
+  const processDeltas = useCallback((deltas: TranscriptionDelta[]) => {
     if (deltas.length === 0) return;
 
     setMessages(prev => {
       let newMessages = [...prev];
-      let msgIndex = currentTurnIdRef.current ? newMessages.findIndex(m => m.id === currentTurnIdRef.current) : -1;
+      const itemId = deltas.find(d => d.itemId)?.itemId;
+      let msgIndex = itemId ? newMessages.findIndex(m => m.realtimeItemId === itemId) : -1;
+      if (msgIndex === -1) {
+        msgIndex = currentTurnIdRef.current ? newMessages.findIndex(m => m.id === currentTurnIdRef.current) : -1;
+      }
 
       // Initialize a new message if this is a new turn
       if (msgIndex === -1) {
@@ -72,7 +88,7 @@ export const useTranscription = (
         } : m);
 
         newMessages.push({
-          id, text: "", pendingText: "", timestamp: new Date(), updateCount: 0,
+          id, text: "", pendingText: "", realtimeItemId: itemId, timestamp: new Date(), updateCount: 0,
           isTranslated: settingsRef.current.isGlobalTranslationEnabled, isTranslating: false
         });
 
@@ -105,30 +121,16 @@ export const useTranscription = (
     if (status === 'error' || status === 'closed') {
       setIsConnecting(false);
       setIsTranscribing(false);
+      if (status === 'error') {
+        setTranscriptionError('Transcrição realtime encerrada com erro. Verifique os logs do terminal.');
+      }
       stopRecording(); // Ensure audio pipeline is torn down when backend closes
       currentTurnIdRef.current = null;
       return;
     }
 
-    if (status !== 'turn_complete') return;
-    if (!currentTurnIdRef.current) return;
-
-    setMessages(prev => {
-      const idx = prev.findIndex(m => m.id === currentTurnIdRef.current);
-      if (idx === -1) return prev;
-
-      const next = [...prev];
-      const target = next[idx];
-      next[idx] = {
-        ...target,
-        text: (target.text || "") + (target.pendingText || ""),
-        pendingText: ""
-      };
-      return next;
-    });
-
-    currentTurnIdRef.current = null;
-  }, [setMessages]);
+    if (status === 'turn_complete') return;
+  }, [setMessages, stopRecording]);
 
   const isTranscribingRef = useRef(isTranscribing);
   useEffect(() => {
@@ -164,18 +166,23 @@ export const useTranscription = (
       return;
     }
 
+    setTranscriptionError(null);
     setIsConnecting(true);
     const success = await electronService.startSusurroLive(settingsRef.current.selectedPersona?.systemPrompt);
 
     if (!success) {
       setIsConnecting(false);
+      setTranscriptionError('Não foi possível iniciar a transcrição realtime. Verifique a OpenAI API key e os logs.');
       return;
     }
 
     // Once the backend says it started successfully, we can start capturing audio.
     // The 'ready' status from backend will set isTranscribing=true via handleStatusUpdate.
+    const useSystemAudio = shouldUseSystemAudioForSusurro();
+    console.log(`[TRANSCRIPTION] Starting capture mode: ${useSystemAudio ? 'system-audio' : 'microphone'}`);
     const started = await startRecording({
-      isSystemAudio: true,
+      sampleRate: 24000,
+      isSystemAudio: useSystemAudio,
       onChunk: (base64, seq) => {
         electronService.sendSusurroChunk(base64, seq);
       }
@@ -188,7 +195,7 @@ export const useTranscription = (
       setIsTranscribing(false);
       handleStatusUpdate('error');
     }
-  }, [startRecording, stopRecording]);
+  }, [startRecording, stopRecording, processDeltas, handleStatusUpdate]);
 
   // Sync gain node with volume state
   useEffect(() => {
@@ -242,6 +249,7 @@ export const useTranscription = (
   return {
     isTranscribing,
     isConnecting,
+    transcriptionError,
     startTranscriptionHades: toggleTranscription,
     stopTranscriptionHades: toggleTranscription
   };

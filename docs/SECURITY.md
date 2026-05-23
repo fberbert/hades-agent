@@ -24,8 +24,7 @@ Chaves são aceitas por settings e também podem ser carregadas de `.env`.
 
 Chaves conhecidas:
 
-- Gemini API key;
-- Tavily API key.
+- OpenAI API key;
 
 Regras:
 
@@ -33,6 +32,7 @@ Regras:
 - Nunca commite `.env`.
 - Nunca cole settings descriptografadas em docs ou logs.
 - Trate `settings.json` como sensível mesmo sendo criptografado.
+- Mantenha a OpenAI API key no main process. Código React deve usar IPC, não `fetch` direto para OpenAI.
 
 ## Criptografia de Settings
 
@@ -60,9 +60,8 @@ Arquivos relevantes:
 
 - `electron/ipc/toolHandlers.js`
 - `src/hooks/useCommandBar.ts`
-- `src/hooks/useGemini.ts`
+- `src/hooks/useAssistantInference.ts`
 - `src/hooks/useAudioRecorder.ts`
-- `electron/services/geminiLiveService.js`
 
 Regras:
 
@@ -101,7 +100,7 @@ Antes de apertar ou afrouxar a CSP:
 - teste modo dev;
 - teste modo empacotado;
 - confira AudioWorklets e uso de blob;
-- confira chamadas Gemini/Tavily.
+- confira chamadas OpenAI.
 
 ## Links Externos
 

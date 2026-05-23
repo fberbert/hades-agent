@@ -10,7 +10,8 @@ O suporte Linux é baseado em capacidades. Chat central, settings, prompts, busc
 - Build/empacotamento com `npm run dist:linux`.
 - CommandBar e MiniChat.
 - Settings.
-- Fluxos Gemini e Tavily.
+- Fluxos OpenAI-first do MiniChat, Voice/STT e Dreaming, desde que a OpenAI API key esteja configurada.
+- Susurro realtime por OpenAI Realtime Transcription usando microfone, desde que a OpenAI API key e a permissão de microfone estejam configuradas.
 - Armazenamento JSON local.
 - Tray com ícone PNG.
 - Captura de microfone quando permissões de mídia do navegador funcionam.
@@ -57,11 +58,13 @@ A primeira validação neste checkout passou em:
 - session: x11
 - desktop: ubuntu:GNOME
 - build: pass
-- tests: 21 pass em 6 arquivos
+- tests: 72 pass em 20 arquivos
 - package: pass, AppImage e deb gerados em `release/`
 - runtime smoke: pass; Electron abriu CommandBar, MiniChat, Settings e Susurro, confirmou cada janela visível/focada com URL esperada e saiu.
 
-Chat com modelo real, captura de tela real e captura de áudio real ainda exigem chaves de API configuradas e prompts de permissão do desktop. Áudio do sistema permanece intencionalmente desabilitado no Linux até existir backend dedicado implementado e testado.
+Chat com modelo real, busca web OpenAI, Susurro realtime com microfone, captura de tela real e captura de áudio real ainda exigem chaves de API configuradas e prompts de permissão do desktop. Áudio do sistema permanece intencionalmente desabilitado no Linux até existir backend dedicado PulseAudio/PipeWire implementado e testado.
+
+Próxima fase de áudio do sistema: detectar PulseAudio/PipeWire monitor sources via `pactl list sources`, expor seleção no renderer e só então habilitar `isSystemAudio` no Susurro Linux.
 
 ## Nota Sobre Sandbox em Desenvolvimento
 

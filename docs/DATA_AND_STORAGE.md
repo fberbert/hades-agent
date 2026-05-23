@@ -61,17 +61,22 @@ Settings padrão são definidas em `jsonStore.js`.
     systemAudioVolume: 100
   },
   general: {
-    apiKey: '',
-    tavilyApiKey: '',
-    minichatModel: 'gemini-2.5-flash',
-    sttModel: 'gemini-2.5-flash',
-    fullTranscriptionModel: 'gemini-2.5-flash',
+    openaiApiKey: '',
+    minichatModel: 'gpt-5-nano',
+    sttModel: 'gpt-4o-mini-transcribe',
+    fullTranscriptionModel: 'gpt-4o-mini-transcribe',
+    realtimeModel: 'gpt-realtime-mini',
     stealthMode: false,
     dreamingEnabled: true,
-    dreamingModel: 'gemini-2.5-flash'
+    dreamingModel: 'gpt-5-nano'
+  },
+  response: {
+    audioForVoiceInput: true,
+    alwaysAudio: false
   },
   shortcuts: {
     toggleCommand: 'Alt+D',
+    toggleChat: 'Alt+C',
     toggleSettings: 'Alt+S',
     toggleSusurro: 'Alt+B',
     toggleVoice: 'Alt+V'
@@ -79,7 +84,7 @@ Settings padrão são definidas em `jsonStore.js`.
 }
 ```
 
-Settings são mescladas profundamente no carregamento para que novas chaves default sobrevivam a arquivos salvos antigos.
+Settings são mescladas profundamente no carregamento para que novas chaves default sobrevivam a arquivos salvos antigos. Valores de providers removidos são normalizados e descartados por `providerRouter.js`. A seção `response` controla apenas reprodução de áudio; a resposta textual do MiniChat é sempre exibida.
 
 ## Criptografia de Settings
 
@@ -100,17 +105,15 @@ Na inicialização, `main.js` lê `.env` da raiz do repositório se existir.
 
 `jsonStore.loadAll()` também popula:
 
-- `process.env.VITE_GEMINI_API_KEY`
-- `process.env.VITE_TAVILY_API_KEY`
+- `process.env.OPENAI_API_KEY`
 
-Essas variáveis são preenchidas a partir de settings persistidas por compatibilidade.
+Essa variável é preenchida a partir de settings persistidas.
 
 `.env.example` documenta:
 
-- `VITE_GEMINI_API_KEY`
-- `VITE_TAVILY_API_KEY`
+- `OPENAI_API_KEY`
 
-Chaves informadas pela UI são o caminho primário atual.
+Chaves informadas pela UI são o caminho primário atual. `openaiApiKey` é usada pelo main process e não deve ser lida diretamente por código React.
 
 Capacidades runtime de plataforma, como suporte Linux a captura ou content protection, são derivadas por IPC na inicialização e não são persistidas em arquivos de settings.
 

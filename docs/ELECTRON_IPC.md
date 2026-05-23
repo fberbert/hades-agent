@@ -14,6 +14,7 @@ registerTaskHandlers();
 registerSusurroHandlers();
 registerToolHandlers();
 registerVoiceHandlers();
+registerAIHandlers();
 registerSettingsHandlers();
 ```
 
@@ -36,7 +37,7 @@ Não exponha `ipcRenderer` bruto ao renderer.
 
 Métodos do preload:
 
-- `sendMessage(message, image)`
+- `sendMessage(message, image, options)`
 - `onNewChatMessage(callback)`
 - `onFocusInput(callback)`
 - `onNotify(callback)`
@@ -48,11 +49,14 @@ Handlers:
 - `main.js` trata `send-message` e `chat-window-ready`.
 - `electron/ipc/windowHandlers.js` trata eventos de notificação.
 
+`options.source` identifica a origem da mensagem (`text`, `voice` ou `task`). O fluxo Voice envia `{ source: 'voice' }`; o MiniChat cruza essa origem com `settings.response` para decidir se também reproduz a resposta em áudio. A resposta textual é sempre exibida.
+
 ### Gerenciamento de Janelas
 
 Métodos do preload:
 
 - `closeWindow()`
+- `hideVoiceWindow()`
 - `minimizeWindow()`
 - `resizeWindow(w, h)`
 - `showChat()`
@@ -70,6 +74,8 @@ Handlers:
 - `electron/ipc/windowHandlers.js`
 - alguns toggles de áudio do Susurro são tratados por `electron/ipc/susurroHandlers.js`.
 
+`closeWindow()` ainda é genérico e pode esconder múltiplas janelas dependendo da origem. O Voice Recorder deve usar `hideVoiceWindow()` para cancelar ou finalizar sem fechar o MiniChat.
+
 ### Chat e Estado de Sessão
 
 Métodos do preload:
@@ -81,10 +87,18 @@ Métodos do preload:
 - `getTotalTokens()`
 - `endSession(type)`
 - `chatWindowReady()`
+- `assistantGenerateResponse(payload)`
 
 Handler:
 
 - `electron/ipc/chatHandlers.js`
+- `electron/ipc/aiHandlers.js`
+
+Service:
+
+- `electron/services/openaiResponsesService.js`
+
+`assistantGenerateResponse` é o caminho OpenAI-first do MiniChat. O renderer envia mensagem, histórico, system prompt, modelo e flag de web search; o main process lê a OpenAI API key das settings/env e retorna texto, modelo e total de tokens.
 
 ### Tarefas
 
@@ -116,6 +130,7 @@ Métodos do preload:
 - `onStartSusurro(callback)`
 - `onStopSusurro(callback)`
 - `transcribeAudio(base64)`
+- `synthesizeSpeech(text, options)`
 - `getSystemAudioSourceId()`
 
 Handlers:
@@ -126,8 +141,16 @@ Handlers:
 
 Services:
 
-- `electron/services/geminiLiveService.js`
 - `electron/services/aiService.js`
+- `electron/services/openaiRealtimeTranscriptionService.js`
+- `electron/services/openaiTranscriptionService.js`
+- `electron/services/openaiSpeechService.js`
+
+`startSusurroLive(persona)` invoca `susurro-start-live` e cria uma sessão OpenAI Realtime Transcription no main process usando a OpenAI API key das settings/env. O modelo padrão do service realtime é `gpt-4o-mini-transcribe`, salvo override por `general.fullTranscriptionModel || general.sttModel`.
+
+`sendSusurroChunk(base64, seq)` invoca `susurro-send-chunk` e encaminha chunks PCM16/base64 a 24 kHz para a sessão ativa. No Linux, esses chunks vêm do microfone capturado pelo renderer com `useAudioRecorder`; áudio do sistema no Linux ainda é fase separada com backend PulseAudio/PipeWire. `stopSusurroLive()` encerra a sessão. Status e deltas de transcrição retornam por `susurro-live-status` e `susurro-live-delta`.
+
+`synthesizeSpeech` usa OpenAI TTS no main process e retorna `audioDataUrl`, `model`, `voice` e `format` para o renderer reproduzir localmente.
 
 ### Captura de Tela
 
@@ -146,7 +169,7 @@ Handler:
 Consumidores no renderer:
 
 - `src/hooks/useCommandBar.ts`
-- `src/hooks/useGemini.ts`
+- `src/hooks/useAssistantInference.ts`
 
 ### Personas e Sugestões
 
@@ -186,7 +209,6 @@ Service:
 Métodos do preload:
 
 - `openFileDialog()`
-- `searchWeb(query)`
 - `getLolPlayerStats(args)`
 - `openExternal(url)`
 - `copyToClipboard(text)`

@@ -8,6 +8,7 @@ import SettingsSidebar from './settings/SettingsSidebar';
 import HistoryTab from './settings/HistoryTab';
 import AudioTab from './settings/AudioTab';
 import GeneralTab from './settings/GeneralTab';
+import ResponseTab from './settings/ResponseTab';
 import ShortcutsTab from './settings/ShortcutsTab';
 
 const Settings: React.FC = () => {
@@ -20,6 +21,7 @@ const Settings: React.FC = () => {
     isSaving,
     updateAudioSettings,
     updateGeneralSettings,
+    updateResponseSettings,
     updateShortcutsSettings,
     saveAll
   } = useSettings();
@@ -68,6 +70,13 @@ const Settings: React.FC = () => {
               settings={settings.general} 
               updateSettings={updateGeneralSettings} 
               platformCapabilities={platformCapabilities}
+            />
+          )}
+
+          {activeTab === 'response' && (
+            <ResponseTab
+              settings={settings.response}
+              updateSettings={updateResponseSettings}
             />
           )}
 

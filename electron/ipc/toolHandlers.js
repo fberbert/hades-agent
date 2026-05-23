@@ -3,7 +3,6 @@ const { exec } = require('node:child_process');
 const logger = require('../services/logger');
 const skillService = require('../services/skillService');
 const sessionLogger = require('../services/sessionLogger');
-const searchService = require('../services/searchService');
 const { getCaptureCapabilities, buildCaptureError } = require('../platform/captureCapabilities');
 
 /**
@@ -24,13 +23,6 @@ function registerToolHandlers() {
   
   ipcMain.handle('load-skill', async (event, name) => {
     return await skillService.loadSkill(name);
-  });
-
-  /**
-   * Web Search
-   */
-  ipcMain.handle('search-web', async (event, query) => {
-    return await searchService.searchWeb(query);
   });
 
   /**

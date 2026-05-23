@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { ChevronRight, Camera, X, Paperclip, Plus, ChevronDown, Check } from 'lucide-react';
 import { useCommandBar } from '../hooks/useCommandBar';
 import { electronService } from '../services/electron';
-import { MODELS } from '../constants/models';
+import {
+  DEFAULT_MODEL,
+  MODELS,
+  ModelDefinition,
+  getChatModels
+} from '../constants/models';
 
 /**
  * CommandBar component - A sleek, minimal input bar for AI commands.
@@ -25,7 +30,7 @@ const CommandBar: React.FC = () => {
     setIsModelDropdownOpen
   } = useCommandBar();
 
-  const [activeModel, setActiveModel] = useState<string>('gemini-2.5-flash');
+  const [activeModel, setActiveModel] = useState<string>(DEFAULT_MODEL);
 
   // Sync settings and setup listeners on mount
   useEffect(() => {
@@ -82,6 +87,10 @@ const CommandBar: React.FC = () => {
   };
 
   const activeModelData = MODELS.find(m => m.id === activeModel);
+  const chatModels = getChatModels();
+  const modelOptions: ModelDefinition[] = activeModelData?.type === 'chat' && !chatModels.some(m => m.id === activeModel)
+    ? [activeModelData, ...chatModels]
+    : chatModels;
 
   return (
     <div className="app-container command-mode" ref={containerRef}>
@@ -199,7 +208,7 @@ const CommandBar: React.FC = () => {
               animation: 'appear 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           >
-            {MODELS.map((m) => {
+            {modelOptions.map((m) => {
               const isSelected = m.id === activeModel;
               return (
                 <button

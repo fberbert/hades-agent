@@ -52,6 +52,12 @@ const Susurro: React.FC = () => {
         onCloseSession={s.onCloseSession}
       />
 
+      {s.transcriptionError && (
+        <div className="susurro-error" role="status">
+          {s.transcriptionError}
+        </div>
+      )}
+
       {/* Main Chat Area */}
       <SusurroChatList
         messages={s.messages}

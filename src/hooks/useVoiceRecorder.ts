@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useAudioRecorder } from './useAudioRecorder';
 import { encodeWAV, floatTo16BitPCM, arrayBufferToBase64 } from '../utils/audio';
+import { buildVoiceMessageOptions, getTranscribedCommand } from '../utils/voiceCommand';
 import { electronService } from '../services/electron';
 
 /**
@@ -25,13 +26,22 @@ export const useVoiceRecorder = () => {
     accumulatedAudio.current = [];
   }, []);
 
+  const sendTranscribedCommand = useCallback((command: string) => {
+    electronService.sendMessage(command, null, buildVoiceMessageOptions());
+    setStatus('Enviado!');
+    setTimeout(() => {
+      resetState();
+      electronService.hideVoiceWindow();
+    }, 500);
+  }, [resetState]);
+
   const start = useCallback(async () => {
     setStep(2);
     setStatus('Gravando áudio...');
     setTranscription('');
     accumulatedAudio.current = [];
     
-    await startRecording({
+    const started = await startRecording({
       sampleRate: 16000,
       onRawChunk: (samples) => {
         accumulatedAudio.current.push(new Float32Array(samples));
@@ -39,6 +49,11 @@ export const useVoiceRecorder = () => {
       onVolumeChange: (v) => setVolume(v),
       isSystemAudio: false
     });
+
+    if (!started) {
+      setStep(1);
+      setStatus('Não foi possível acessar o microfone');
+    }
   }, [startRecording]);
 
   const stopAndTranscribe = useCallback(async () => {
@@ -68,35 +83,34 @@ export const useVoiceRecorder = () => {
 
       // Send to Electron backend for transcription
       const result = await electronService.transcribeAudio(base64);
-      if (result.success) {
-        setTranscription(result.data || '');
-        setStatus('Transcrição concluída!');
+      const command = getTranscribedCommand(result);
+      if (command) {
+        setTranscription(command);
+        setIsTranscribing(false);
+        sendTranscribedCommand(command);
       } else {
-        setTranscription(`Erro: ${result.error}`);
+        setTranscription(`Erro: ${result.error || 'Transcrição vazia'}`);
         setStatus('Erro na transcrição');
+        setIsTranscribing(false);
       }
-      setIsTranscribing(false);
     } catch (err) {
       console.error('[VOICE_RECORDER] Transcription error:', err);
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      setTranscription(`Erro: ${message}`);
       setStatus('Erro na transcrição');
       setIsTranscribing(false);
     }
-  }, [stopRecording]);
+  }, [stopRecording, sendTranscribedCommand]);
 
   const finalize = useCallback(async () => {
     if (transcription.trim()) {
       // Send the transcribed message to the chat
-      electronService.sendMessage(transcription);
-      setStatus('Enviado!');
-      setTimeout(() => {
-        resetState();
-        electronService.closeWindow();
-      }, 500);
+      sendTranscribedCommand(transcription);
     } else {
       resetState();
-      electronService.closeWindow();
+      electronService.hideVoiceWindow();
     }
-  }, [transcription, resetState]);
+  }, [transcription, resetState, sendTranscribedCommand]);
 
   return {
     step,

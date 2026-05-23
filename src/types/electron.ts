@@ -16,9 +16,36 @@ export interface PlatformFeatureSummary {
   systemAudioCapture: { supported: boolean; caveat: string };
 }
 
+export interface AssistantGeneratePayload {
+  message: string;
+  history: any[];
+  systemPrompt: string;
+  model?: string;
+  enableWebSearch?: boolean;
+}
+
+export interface AssistantGenerateResult {
+  text: string;
+  totalTokens: number;
+  model: string;
+}
+
+export interface ChatMessageOptions {
+  speakResponse?: boolean;
+  source?: 'text' | 'voice' | 'task';
+}
+
+export interface SpeechSynthesisResult {
+  audioDataUrl: string;
+  model: string;
+  voice: string;
+  format: string;
+}
+
 export interface ElectronAPI {
   // Window Control
   closeWindow: () => Promise<IPCResponse<void>>;
+  hideVoiceWindow: () => Promise<IPCResponse<void>>;
   minimizeWindow: () => Promise<IPCResponse<void>>;
   resizeWindow: (width: number, height: number) => Promise<IPCResponse<void>>;
   togglePin: () => void;
@@ -30,9 +57,9 @@ export interface ElectronAPI {
   toggleAudio: (enabled: boolean) => void;
   
   // Messaging & Notifications
-  sendMessage: (text: string, image?: string | null) => void;
+  sendMessage: (text: string, image?: string | null, options?: ChatMessageOptions) => void;
   showNotification: (text: string) => void;
-  onNewChatMessage: (callback: (msg: string, img?: string) => void) => () => void;
+  onNewChatMessage: (callback: (msg: string, img?: string, options?: ChatMessageOptions) => void) => () => void;
   onFocusInput: (callback: () => void) => () => void;
   onNotify: (callback: (message: string) => void) => () => void;
   notifHidden: () => void;
@@ -52,6 +79,7 @@ export interface ElectronAPI {
   getTotalTokens: () => Promise<IPCResponse<number>>;
   updateTokens: (count: number) => Promise<IPCResponse<number>>;
   chatWindowReady: () => void;
+  assistantGenerateResponse: (payload: AssistantGeneratePayload) => Promise<IPCResponse<AssistantGenerateResult>>;
   
   // Susurro (Live Transcription)
   startSusurroLive: (personaPrompt?: string) => Promise<IPCResponse<boolean>>;
@@ -67,8 +95,6 @@ export interface ElectronAPI {
   
   // Tools & IPC
   openFileDialog: () => Promise<string | null>;
-  searchWeb: (query: string) => Promise<any>;
-
   
   // Skills System
   saveSkill: (args: { name: string, description: string, procedure: string }) => Promise<IPCResponse<any>>;
@@ -78,6 +104,7 @@ export interface ElectronAPI {
   // Session Logging
   logSession: (data: any) => Promise<IPCResponse<any>>;
   getLearnings: () => Promise<IPCResponse<string>>;
+  logRendererDiagnostic: (source: string, message: string, detail?: any) => void;
 
   scheduleTask: (args: any) => Promise<IPCResponse<any>>;
 
@@ -87,7 +114,8 @@ export interface ElectronAPI {
   showChat: () => void;
   translateText: (text: string, targetLanguage: string) => Promise<IPCResponse<string>>;
   translateIncremental: (text: string, previousText: string, targetLanguage: string) => Promise<IPCResponse<string>>;
-  transcribeAudio: (base64: string) => Promise<string>;
+  transcribeAudio: (base64: string) => Promise<IPCResponse<string>>;
+  synthesizeSpeech: (text: string, options?: any) => Promise<IPCResponse<SpeechSynthesisResult>>;
   getSystemAudioSourceId: () => Promise<IPCResponse<string>>;
   updateChatPin: (pinned: boolean) => void;
   getPersonas: () => Promise<IPCResponse<any[]>>;
@@ -135,18 +163,24 @@ export interface AudioSettings {
 }
 
 export interface GeneralSettings {
-  apiKey: string;
-  tavilyApiKey: string;
+  openaiApiKey: string;
   minichatModel: string;
   sttModel: string;
   fullTranscriptionModel: string;
+  realtimeModel: string;
   stealthMode: boolean;
   dreamingEnabled: boolean;
   dreamingModel: string;
 }
 
+export interface ResponseSettings {
+  audioForVoiceInput: boolean;
+  alwaysAudio: boolean;
+}
+
 export interface ShortcutsSettings {
   toggleCommand: string;
+  toggleChat: string;
   toggleSettings: string;
   toggleSusurro: string;
   toggleVoice: string;
@@ -155,6 +189,7 @@ export interface ShortcutsSettings {
 export interface SettingsData {
   audio: AudioSettings;
   general: GeneralSettings;
+  response: ResponseSettings;
   shortcuts?: ShortcutsSettings;
 }
 

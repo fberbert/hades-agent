@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronLeft, Check } from 'lucide-react';
-import { MODELS } from '../../constants';
+import { getModelsByType } from '../../constants';
 
 interface SettingsMenuProps {
   view: 'main' | 'models';
@@ -20,6 +20,8 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
   onSelectModel,
   onClose
 }) => {
+  const chatModels = getModelsByType('chat');
+
   return (
     <div className="settings-menu">
       {view === 'main' ? (
@@ -37,7 +39,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
             <span>Select Model</span>
           </button>
           <div className="models-list">
-            {MODELS.map(m => (
+            {chatModels.map(m => (
               <button 
                 key={m.id} 
                 className={`menu-item ${currentModel === m.id ? 'active' : ''}`} 

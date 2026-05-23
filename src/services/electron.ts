@@ -1,4 +1,12 @@
-import { ElectronAPI, IPCResponse, SettingsData } from '../types/electron';
+import {
+  AssistantGeneratePayload,
+  AssistantGenerateResult,
+  ChatMessageOptions,
+  ElectronAPI,
+  IPCResponse,
+  SettingsData,
+  SpeechSynthesisResult,
+} from '../types/electron';
 
 /**
  * Service to interact with the Electron IPC layer.
@@ -36,6 +44,7 @@ class ElectronService {
 
   // --- Window Control ---
   async closeWindow() { await this.handleResponse(this.electron?.closeWindow(), undefined, 'closeWindow'); }
+  async hideVoiceWindow() { await this.handleResponse(this.electron?.hideVoiceWindow(), undefined, 'hideVoiceWindow'); }
   async minimizeWindow() { await this.handleResponse(this.electron?.minimizeWindow(), undefined, 'minimizeWindow'); }
   async resizeWindow(width: number, height: number) { await this.handleResponse(this.electron?.resizeWindow(width, height), undefined, 'resizeWindow'); }
   togglePin() { this.electron?.togglePin(); }
@@ -47,9 +56,9 @@ class ElectronService {
   toggleAudio(enabled: boolean) { this.electron?.toggleAudio(enabled); }
 
   // --- Messaging ---
-  sendMessage(text: string, image?: string | null) { this.electron?.sendMessage(text, image); }
+  sendMessage(text: string, image?: string | null, options?: ChatMessageOptions) { this.electron?.sendMessage(text, image, options); }
   showNotification(text: string) { this.electron?.showNotification(text); }
-  onNewChatMessage(callback: (msg: string, img?: string) => void) {
+  onNewChatMessage(callback: (msg: string, img?: string, options?: ChatMessageOptions) => void) {
     return this.electron?.onNewChatMessage(callback) || (() => {});
   }
   onFocusInput(callback: () => void) {
@@ -87,6 +96,13 @@ class ElectronService {
     return await this.handleResponse(this.electron?.updateTokens(count), 0, 'updateTokens'); 
   }
   chatWindowReady() { this.electron?.chatWindowReady(); }
+  async assistantGenerateResponse(payload: AssistantGeneratePayload): Promise<AssistantGenerateResult> {
+    return await this.handleResponse(
+      this.electron?.assistantGenerateResponse(payload),
+      { text: '', totalTokens: 0, model: payload.model || '' },
+      'assistantGenerateResponse'
+    );
+  }
 
   // --- Susurro ---
   async startSusurroLive(personaPrompt?: string) { 
@@ -120,8 +136,6 @@ class ElectronService {
 
   // --- Tools (IPC wrappers) ---
   async openFileDialog(): Promise<string | null> { return await this.electron?.openFileDialog() ?? null; }
-  async searchWeb(query: string) { return await this.electron?.searchWeb(query); }
-
   
   // --- Skills System ---
   async saveSkill(args: any) { return await this.handleResponse(this.electron?.saveSkill(args), 'Erro ao salvar skill', 'saveSkill'); }
@@ -131,6 +145,9 @@ class ElectronService {
   // --- Session Logger ---
   async logSession(data: any) { return await this.handleResponse(this.electron?.logSession(data), null, 'logSession'); }
   async getLearnings() { return await this.handleResponse(this.electron?.getLearnings(), 'Nenhuma memória consolidada ainda.', 'getLearnings'); }
+  logRendererDiagnostic(source: string, message: string, detail?: any) {
+    this.electron?.logRendererDiagnostic?.(source, message, detail);
+  }
 
   // --- Settings ---
   async getSettings(): Promise<SettingsData | null> { 
@@ -172,7 +189,12 @@ class ElectronService {
   async translateIncremental(text: string, previousText: string, targetLanguage: string) {
     return await this.handleResponse(this.electron?.translateIncremental(text, previousText, targetLanguage), '', 'translateIncremental');
   }
-  async transcribeAudio(base64: string) { return await this.electron?.transcribeAudio(base64) || ''; }
+  async transcribeAudio(base64: string): Promise<IPCResponse<string>> {
+    return await this.electron?.transcribeAudio(base64) || { success: false, error: 'Transcrição indisponível.' };
+  }
+  async synthesizeSpeech(text: string): Promise<SpeechSynthesisResult | null> {
+    return await this.handleResponse(this.electron?.synthesizeSpeech(text), null, 'synthesizeSpeech');
+  }
   async getSystemAudioSourceId() { 
     return await this.handleResponse(this.electron?.getSystemAudioSourceId(), '', 'getSystemAudioSourceId'); 
   }

@@ -10,6 +10,7 @@ interface ShortcutsTabProps {
 
 const DEFAULTS = {
   toggleCommand: 'Alt+D',
+  toggleChat: 'Alt+C',
   toggleSettings: 'Alt+S',
   toggleSusurro: 'Alt+B',
   toggleVoice: 'Alt+V'
@@ -22,6 +23,7 @@ const ShortcutsTab: React.FC<ShortcutsTabProps> = ({ settings = {}, updateSettin
   // Ensure default values are populated if missing
   const activeShortcuts = {
     toggleCommand: settings?.toggleCommand || DEFAULTS.toggleCommand,
+    toggleChat: settings?.toggleChat || DEFAULTS.toggleChat,
     toggleSettings: settings?.toggleSettings || DEFAULTS.toggleSettings,
     toggleSusurro: settings?.toggleSusurro || DEFAULTS.toggleSusurro,
     toggleVoice: settings?.toggleVoice || DEFAULTS.toggleVoice
@@ -124,6 +126,11 @@ const ShortcutsTab: React.FC<ShortcutsTabProps> = ({ settings = {}, updateSettin
       key: 'toggleCommand' as const,
       title: 'Barra de Comandos & Chat',
       desc: 'Abre ou esconde o console de comandos rápidos e o painel de chat principal.',
+    },
+    {
+      key: 'toggleChat' as const,
+      title: 'MiniChat',
+      desc: 'Abre ou esconde o MiniChat diretamente, sem enviar uma nova mensagem.',
     },
     {
       key: 'toggleSettings' as const,

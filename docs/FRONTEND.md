@@ -9,7 +9,7 @@ O renderer é um app React/Vite em `src/`. Ele é usado por múltiplas janelas E
 - `src/components/` - componentes visuais de cada janela e funcionalidade.
 - `src/hooks/` - comportamento com estado e orquestração de funcionalidades.
 - `src/services/electron.ts` - wrapper do renderer sobre `window.electron`.
-- `src/constants/` - prompts, modelos, declarações de ferramentas, idiomas, áudio e timers de tradução.
+- `src/constants/` - prompts, modelos, idiomas, áudio e timers de tradução.
 - `src/types/` - contratos TypeScript do lado do renderer.
 - `src/utils/` - helpers de áudio, imagem, transcrição e IA.
 - `src/styles/` - CSS separado por funcionalidade.
@@ -29,11 +29,11 @@ O renderer é um app React/Vite em `src/`. Ele é usado por múltiplas janelas E
 ## Responsabilidades dos Hooks
 
 - `useCommandBar` - estado de input, anexos, captura de tela, tamanho dinâmico e ação de envio.
-- `useMiniChat` - orquestração do chat, loop de resposta Gemini, seleção de modelo, timers, tokens e menu.
+- `useMiniChat` - orquestração do chat, seleção de modelo, timers, tokens e menu.
 - `useChatState` - merge de histórico local e persistido, append, clear e persistência.
-- `useGemini` - construção de system prompt, loop de requisição Gemini, execução de function calls e contabilidade de tokens.
+- `useAssistantInference` - monta system prompt e usa OpenAI via IPC.
 - `useSusurro` - estado do Susurro, personas, transcrição, tradução, sugestões, timers e menu.
-- `useTranscription` - start/stop do Gemini Live, deltas de transcrição, agregação de turnos e status.
+- `useTranscription` - start/stop da transcrição realtime, agregação de turnos e status.
 - `useAudioRecorder` - captura de áudio suportada, AudioWorklet, silence gating e chunks PCM16/base64.
 - `useTranslation` - ciclo de tradução em segundo plano para mensagens do Susurro.
 - `useVoiceRecorder` - gravação one-shot, WAV, envio para transcrição e finalização.
@@ -78,7 +78,7 @@ Siga o arquivo CSS existente do componente tocado. Não mova estilos amplos sem 
 
 ## Modelos e Prompts
 
-Labels e defaults de modelos ficam em `src/constants/models.ts`.
+Labels, provider, tipo e defaults de modelos ficam em `src/constants/models.ts`. O default é `gpt-5-nano`.
 
 A montagem de prompts fica em `src/constants/prompts.ts`. Os corpos brutos são importados de:
 
@@ -113,11 +113,11 @@ Atualize:
 
 Settings também carrega capacidades de plataforma por IPC e repassa para abas que precisam mostrar avisos degradados no Linux. Esses dados de capacidade não são persistidos como settings do usuário.
 
-### Adicionar uma Nova Ferramenta de IA
+### Alterar Inferência do MiniChat
 
 Atualize:
 
-- declaração em `src/constants/tools.ts`;
-- executor em `src/hooks/useGemini.ts`;
-- `preload.js` e handlers IPC, se comportamento privilegiado for necessário;
+- `src/hooks/useAssistantInference.ts`;
+- `preload.js`, `src/types/electron.ts`, `src/services/electron.ts` e `electron/ipc/aiHandlers.js`, se o contrato IPC mudar;
+- `electron/services/openaiResponsesService.js`;
 - `docs/AI_AND_TOOLS.md`.
